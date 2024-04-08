@@ -17,8 +17,11 @@ def distance(lat1, lon1, lat2, lon2):
     Returns:
         The distance between two points in kilometers
     '''
+    # radius of the earth in km
     r = 6371
+    # convert factor from degree to radian
     p = pi / 180
+    # calculate the haversine theta according to the formula
     hav_theta = 0.5 - cos((lat2 - lat1) * p) / 2 + cos(lat1 * p) * \
         cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2
     return 2 * r * asin(sqrt(hav_theta))
