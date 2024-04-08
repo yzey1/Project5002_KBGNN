@@ -24,20 +24,25 @@ def distance(lat1, lon1, lat2, lon2):
     return 2 * r * asin(sqrt(hav_theta))
 
 
-# source_pth = './dataset_tsmc2014/dataset_TSMC2014_TKY.txt'
-source_pth = './dataset_tsmc2014/dataset_TSMC2014_NYC.txt'
-# dest_pth = './processed_data/tky/'
-dest_pth = './processed_data/nyc/'
+# src_path = './dataset_tsmc2014/dataset_TSMC2014_TKY.txt'
+src_path = './dataset_tsmc2014/dataset_TSMC2014_NYC.txt'
+# dst_path = './processed_data/tky/'
+dst_path = './processed_data/nyc/'
 
-os.makedirs(dest_pth, exist_ok=True)
+# create the destination directory if not exist
+os.makedirs(dst_path, exist_ok=True)
 
+# set random seed
+random.seed(42)
+
+# the columns of the dataset
 col_names = ['uid', 'poi', 'cat_id', 'cat_name',
              'latitude', 'longitude', 'offset', 'time']
 
 print('Reading data...')
 
 # read the data
-data = pd.read_csv(source_pth, sep='\t', header=None,
+data = pd.read_csv(src_path, sep='\t', header=None,
                    names=col_names, encoding='unicode_escape')
 
 # remove the columns that are not needed
@@ -85,6 +90,7 @@ for uid in range(num_user):
         train_set.append(
             (uid, false_seq[i], true_seq[:i], coords[false_seq[i]], 0))
 
+    # we use the last POI of a user as the evaluation set
     eval_set.append(
         (uid, true_seq[-1], true_seq[:-1], coords[true_seq[-1]], 1))
     eval_set.append(
@@ -104,13 +110,13 @@ print(f'#Validation: {len(val_set)}')
 print(f'#Test: {len(test_set)}')
 
 # save the datasets
-with open(dest_pth+'train.pkl', 'wb') as f:
+with open(dst_path+'train.pkl', 'wb') as f:
     pkl.dump(train_set, f, pkl.HIGHEST_PROTOCOL)
     pkl.dump((num_user, num_poi), f, pkl.HIGHEST_PROTOCOL)
-with open(dest_pth+'test.pkl', 'wb') as f:
+with open(dst_path+'test.pkl', 'wb') as f:
     pkl.dump(test_set, f, pkl.HIGHEST_PROTOCOL)
     pkl.dump((num_user, num_poi), f, pkl.HIGHEST_PROTOCOL)
-with open(dest_pth+'val.pkl', 'wb') as f:
+with open(dst_path+'val.pkl', 'wb') as f:
     pkl.dump(val_set, f, pkl.HIGHEST_PROTOCOL)
     pkl.dump((num_user, num_poi), f, pkl.HIGHEST_PROTOCOL)
 
@@ -137,7 +143,7 @@ for i in tqdm(range(num_poi)):
 edges = np.array(edges)
 
 # save the neighborhood graph
-with open(dest_pth+'dist_graph.pkl', 'wb') as f:
+with open(dst_path+'dist_graph.pkl', 'wb') as f:
     pkl.dump(edges, f, pkl.HIGHEST_PROTOCOL)
     pkl.dump(neighbors, f, pkl.HIGHEST_PROTOCOL)
 
@@ -145,6 +151,6 @@ with open(dest_pth+'dist_graph.pkl', 'wb') as f:
 dist_on_graph = np.array([distance(coords[edges[0, i]][0], coords[edges[0, i]][1],
                          coords[edges[1, i]][0], coords[edges[1, i]][1]) for i in range(edges.shape[1])])
 
-np.save(dest_pth + 'dist_on_graph.npy', dist_on_graph)
+np.save(dst_path + 'dist_on_graph.npy', dist_on_graph)
 
 print('Finish generating neighborhood graph.')
