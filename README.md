@@ -22,7 +22,7 @@ Run the following command to preprocess the dataset:
 python preprocess.py
 ```
 
-It may take tens of minutes. After preprocessing, you should see a new directory `processed_data` and a subdirectory `nyc` or `tky`, depending on the dataset you set in `preprocess.py`.
+It may take tens of minutes. After preprocessing, you should see a new directory `processed_data/raw/` and a subdirectory `nyc` or `tky`, depending on the dataset you set in `preprocess.py`.
 
 Under `nyc` or `tky`, you should see the following files:
 

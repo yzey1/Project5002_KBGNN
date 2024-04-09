@@ -29,8 +29,8 @@ def distance(lat1, lon1, lat2, lon2):
 
 # src_path = './dataset_tsmc2014/dataset_TSMC2014_TKY.txt'
 src_path = './dataset_tsmc2014/dataset_TSMC2014_NYC.txt'
-# dst_path = './processed_data/tky/'
-dst_path = './processed_data/nyc/'
+# dst_path = './processed_data/tky/raw/'
+dst_path = './processed_data/nyc/raw/'
 
 # create the destination directory if not exist
 os.makedirs(dst_path, exist_ok=True)
