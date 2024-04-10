@@ -6,6 +6,48 @@ from torch.nn.utils.rnn import pad_sequence
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import degree
 
+
+def sequence_mask(lengths, max_len=None):
+    lengths_shape = lengths.shape  # torch.size() is a tuple
+    lengths = lengths.reshape(-1)
+    
+    batch_size = lengths.numel()
+    max_len = max_len or int(lengths.max())
+    lengths_shape += (max_len, )
+    
+    return (torch.arange(0, max_len, device=lengths.device)
+    .type_as(lengths)
+    .unsqueeze(0).expand(batch_size,max_len)
+    .lt(lengths.unsqueeze(1))).reshape(lengths_shape)
+
+
+class HardAttn(nn.Module):
+    def __init__(self, hidden_size):
+        super(HardAttn, self).__init__()
+        self.hidden_size = hidden_size
+        self.K = nn.Linear(hidden_size, hidden_size)
+        self.Q = nn.Linear(hidden_size, hidden_size)
+        self.V = nn.Linear(hidden_size, hidden_size)
+
+        for w in self.modules():
+            if isinstance(w, nn.Linear):
+                nn.init.xavier_normal_(w.weight)
+
+    def forward(self, sess_embed, query, sections, seq_lens):
+        v_i = torch.split(sess_embed, sections)
+        v_i_pad = pad_sequence(v_i, batch_first=True, padding_value=0.)
+        
+        v_i_pad = self.K(v_i_pad)
+        query = self.Q(query)
+        seq_mask = sequence_mask(seq_lens)
+        
+        attn_weight = (v_i_pad * query.unsqueeze(1)).sum(-1)
+        pad_val = (-2 ** 32 + 1) * torch.ones_like(attn_weight)
+        attn_weight = torch.where(seq_mask, attn_weight, pad_val).softmax(-1)
+
+        seq_feat = (v_i_pad * attn_weight.unsqueeze(-1)).sum(1)
+        return self.V(seq_feat)
+
 class GeoGraph(nn.Module):
     def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, device):
         super(GeoGraph, self).__init__()
