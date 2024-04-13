@@ -6,9 +6,13 @@ from tqdm import tqdm
 
 
 class MyDataset(InMemoryDataset):
-    def __init__(self, root='./processed_data/nyc', set='train', transform=None, pre_transform=None):
+    def __init__(self, root='./processed_data/nyc', set='train', percentage=0.1, transform=None, pre_transform=None):
         # set is 'train' or 'test' or 'val'
         self.set = set
+
+        # the percentage of data to be used
+        self.percentage=percentage
+        
         super().__init__(root, transform, pre_transform)
         self.load(self.processed_paths[0])
 
@@ -29,8 +33,10 @@ class MyDataset(InMemoryDataset):
     def process(self):
         with open(osp.join(self.raw_dir, self.raw_file_names[0]), 'rb') as f:
             data = pkl.load(f)
+            print(f'orignial data num: {len(data)}')
+            
         data_list = []
-        for uid, poi, seq, coord, y in tqdm(data):
+        for uid, poi, seq, coord, y in tqdm(data[:int(len(data)*self.percentage)]):
             # the first appearance order of the poi in the sequence
             idx = 0
             x = []
