@@ -46,6 +46,9 @@ ARG.add_argument('--compress_memory_size', type=int, default=12800,
 ARG.add_argument('--compress_t', type=float, default=0.01,
                  help='Softmax temperature')
 
+ARG.add_argument('--percentage_data', type=float, default=1,
+                 help='the percentage of data to be used')
+
 ARG = ARG.parse_args()
 
 
@@ -193,9 +196,9 @@ if __name__ == '__main__':
         n_user, n_poi = pickle.load(f)
         del tmp
 
-    train_set = MyDataset(f'../processed/{ARG.data}', phrase='train')
-    val_set = MyDataset(f'../processed/{ARG.data}', phrase='test')
-    test_set = MyDataset(f'../processed/{ARG.data}', phrase='val')
+    train_set = MyDataset(f'../processed/{ARG.data}', set='train', percentage=ARG.percentage_data)
+    val_set = MyDataset(f'../processed/{ARG.data}', set='test', percentage=ARG.percentage_data)
+    test_set = MyDataset(f'../processed/{ARG.data}', set='val', percentage=ARG.percentage_data)
 
     with open(f'../processed/{ARG.data}/raw/dist_graph.pkl', 'rb') as f:
         dist_edges = torch.LongTensor(pickle.load(f))
