@@ -7,7 +7,7 @@ import torch.nn.functional as F
 class SampleSimilarities(nn.Module):
     def __init__(self, embed_dim, queue_size, T, device):
         """
-        Initialize the SampleSimilarities module.
+        Calculate cosine similarity for each batch.
 
         Args:
             embed_dim (int): The dimension of the embedding of semantic representation.
@@ -42,14 +42,17 @@ class SampleSimilarities(nn.Module):
         anchorSeq = self.memory.clone()
 
         # Compute the cosine similarity
-        cosSim = F.cosine_similarity(input_embed, anchorSeq, dim=1)
+        input_n, anchor_n = input_embed.norm(dim=1)[:,None], anchorSeq.norm(dim=1)[:,None]
+        norm_input = input_embed / torch.max(input_n, torch.tensor([1e-6]).to(self.device))
+        norm_anchor = anchorSeq / torch.max(anchor_n, torch.tensor([1e-6]).to(self.device))
+        cosSim = torch.mm(norm_input, norm_anchor.t())
 
         # Scale by temperature
         cosSim = torch.div(cosSim, self.T)
 
         # Compute the softmax
-        sim = F.log_softmax(cosSim, dim=1) # log_softmax instead of softmax: for numerical stability
-        sim = sim.contiguous()
+        # sim = F.log_softmax(cosSim, dim=1) # log_softmax instead of softmax: for numerical stability
+        cosSim = cosSim.contiguous()
 
         # Update the memory bank
         if update:
@@ -66,7 +69,7 @@ class SampleSimilarities(nn.Module):
                 # Update the index for the next update
                 self.index = (self.index + batchSize) % self.queueSize
 
-        return sim
+        return cosSim
 
 
 class consistencyLoss(nn.Module):
@@ -92,22 +95,34 @@ class consistencyLoss(nn.Module):
         self.calculate_sampleSimilarities = SampleSimilarities(embed_dim, queue_size, T, device).to(device)
 
     def forward(self, seq_embed, geo_embed):
-        """
-        Calculates the consistency loss between the given sequence and geometry embeddings.
+            """
+            Calculates the consistency loss between the given sequence and geometry embeddings.
 
-        Args:
-            seq_embed (torch.Tensor): The sequence embeddings.
-            geo_embed (torch.Tensor): The geometry embeddings.
+            Args:
+                seq_embed (torch.Tensor): The sequence embeddings.
+                geo_embed (torch.Tensor): The geometry embeddings.
 
-        Returns:
-            torch.Tensor: The consistency loss.
+            Returns:
+                torch.Tensor: The consistency loss.
 
-        """
-        # Calculate the sample similarities for the sequence and geometry embeddings
-        seq_simDistribution = self.calculate_sampleSimilarities(seq_embed)
-        geo_simDistribution = self.calculate_sampleSimilarities(geo_embed)
+            Raises:
+                None
 
-        # Calculate the KL divergence between the two distributions
-        conLoss = F.kl_div(seq_simDistribution, geo_simDistribution, reduction='batchmean')
+            Examples:
+                >>> model = ConsistencyModel()
+                >>> seq_embed = torch.randn(32, 128)
+                >>> geo_embed = torch.randn(32, 128)
+                >>> loss = model.forward(seq_embed, geo_embed)
+            """
+            # Calculate the sample similarities for the sequence and geometry embeddings
+            seq_simDistribution = self.calculate_sampleSimilarities(seq_embed)
+            geo_simDistribution = self.calculate_sampleSimilarities(geo_embed)
+            
+            # Apply the softmax function to the distributions
+            seq_simDistribution = F.log_softmax(seq_simDistribution, dim=1)
+            geo_simDistribution = F.softmax(geo_simDistribution, dim=1)
+            
+            # Calculate the KL divergence between the two distributions
+            conLoss = F.kl_div(seq_simDistribution,geo_simDistribution,reduction='batchmean')
 
-        return conLoss
+            return conLoss
