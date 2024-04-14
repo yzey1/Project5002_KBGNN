@@ -7,20 +7,6 @@ from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import degree
 
 
-def sequence_mask(lengths, max_len=None):
-    lengths_shape = lengths.shape  # torch.size() is a tuple
-    lengths = lengths.reshape(-1)
-    
-    batch_size = lengths.numel()
-    max_len = max_len or int(lengths.max())
-    lengths_shape += (max_len, )
-    
-    return (torch.arange(0, max_len, device=lengths.device)
-    .type_as(lengths)
-    .unsqueeze(0).expand(batch_size,max_len)
-    .lt(lengths.unsqueeze(1))).reshape(lengths_shape)
-
-
 class HardAttn(nn.Module):
     def __init__(self, hidden_size):
         super(HardAttn, self).__init__()
@@ -140,3 +126,17 @@ class Geo_GCN(nn.Module):
         side_embed = torch.sparse.mm(dist_adj, x)
 
         return self.W(side_embed)
+
+def sequence_mask(lengths, max_len=None):
+    lengths_shape = lengths.shape  # torch.size() is a tuple
+    lengths = lengths.reshape(-1)
+    
+    batch_size = lengths.numel()
+    max_len = max_len or int(lengths.max())
+    lengths_shape += (max_len, )
+    
+    return (torch.arange(0, max_len, device=lengths.device)
+    .type_as(lengths)
+    .unsqueeze(0).expand(batch_size,max_len)
+    .lt(lengths.unsqueeze(1))).reshape(lengths_shape)
+
