@@ -123,6 +123,7 @@ class consistencyLoss(nn.Module):
             geo_simDistribution = F.softmax(geo_simDistribution, dim=1)
             
             # Calculate the KL divergence between the two distributions
-            conLoss = F.kl_div(seq_simDistribution,geo_simDistribution,reduction='batchmean')
+            eps = 1e-6
+            conLoss = F.kl_div(seq_simDistribution,geo_simDistribution+eps,reduction='batchmean')
 
             return conLoss
