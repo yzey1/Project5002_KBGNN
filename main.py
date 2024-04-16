@@ -171,7 +171,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     Sim_criterion = consistencyLoss(arg.embed, arg.compress_memory_size, arg.compress_t, device).to(device)
 
     ## initialize integrative_pred
-    MLP = integrative_pred(arg.embed)
+    MLP = integrative_pred(arg.embed).to(device)
 
     opt = torch.optim.Adam([
                 {'params': Seq_encoder.parameters()},
@@ -259,7 +259,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
         if auc>best_auc:
           best_auc = auc
           best_epoch = epoch
-          test_auc, test_logloss = eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, te_set, arg, device)
+          test_auc, test_loss = eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, te_set, arg, device)
         
         logging.info(f'''Best valid AUC: {best_auc} at epch {best_epoch}, AUC: {best_auc}\n''')
 

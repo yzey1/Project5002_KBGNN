@@ -46,6 +46,24 @@ class HardAttn(nn.Module):
         seq_feat = (v_i_pad * attn_weight.unsqueeze(-1)).sum(1)
         return self.V(seq_feat)
 
+### add multi-head self-attention
+    
+class SelfAttn(nn.Module):
+    def __init__(self, embed_dim, num_heads):
+        super(SelfAttn, self).__init__()
+        self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads, batch_first=True)
+    
+    def forward(self, sess_embed, sections):
+        v_i = torch.split(sess_embed, sections)
+        v_i_pad = pad_sequence(v_i, batch_first=True, padding_value=0.)
+        # v_i = torch.stack(v_i) 
+        
+        attn_output, _ = self.multihead_attn(v_i_pad,v_i_pad,v_i_pad)
+        
+        return attn_output
+        
+        
+
 class GeoGraph(nn.Module):
     def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, device):
         super(GeoGraph, self).__init__()
@@ -81,6 +99,8 @@ class GeoGraph(nn.Module):
 
         self.init_weights()
 
+        self.selfAttn = SelfAttn(self.embed_dim, 1).to(device)
+
     def init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Linear):
@@ -110,8 +130,14 @@ class GeoGraph(nn.Module):
         # tar_embed looks like h_t
         tar_embed = enc[data.poi]
         geo_feat = enc[data.x.squeeze()]
-
-        aggr_feat = self.attn(geo_feat, tar_embed, sections, seq_lens)
+        
+        attn_feat = self.attn(geo_feat, tar_embed, sections, seq_lens)
+        
+        
+        ## add multihead self-attention 
+        self_attn_feat = self.selfAttn(geo_feat, sections)
+        ## aggregate self-attention features to obtain semantic representation e_g,u
+        aggr_feat = torch.mean(self_attn_feat, dim=1)
 
         graph_enc = self.split_mean(enc[data.x.squeeze()], sections)
         pred_input = torch.cat((aggr_feat, tar_embed), dim=-1)
@@ -119,7 +145,8 @@ class GeoGraph(nn.Module):
         pred_logits = self.predictor(pred_input)
 
         # proj_head(graph_enc) looks like e_g,u, however it does not apply multi-head self-attention
-        return self.proj_head(graph_enc), pred_logits, tar_embed
+        # return self.proj_head(graph_enc), pred_logits, tar_embed
+        return aggr_feat, pred_logits, tar_embed
     
 class Geo_GCN(nn.Module):
     def __init__(self, in_channels, out_channels, device):
@@ -142,4 +169,4 @@ class Geo_GCN(nn.Module):
         side_embed = torch.sparse.mm(dist_adj, x)
 
         return self.W(side_embed)
-
+    
