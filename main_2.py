@@ -171,7 +171,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     Sim_criterion = consistencyLoss(arg.embed, arg.compress_memory_size, arg.compress_t, device).to(device)
 
     ## initialize integrative_pred
-    MLP = integrative_pred(arg.embed)
+    MLP = integrative_pred(arg.embed).to(device)
 
     opt = torch.optim.Adam([
                 {'params': Seq_encoder.parameters()},
