@@ -48,21 +48,6 @@ class HardAttn(nn.Module):
         seq_feat = (v_i_pad * attn_weight.unsqueeze(-1)).sum(1)
         return self.V(seq_feat)
 
-### add multi-head self-attention
-    
-class SelfAttn(nn.Module):
-    def __init__(self, embed_dim, num_heads):
-        super(SelfAttn, self).__init__()
-        self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
-    
-    def forward(self, sess_embed, sections, seq_lens):
-        v_i = torch.split(sess_embed, sections)
-        v_i_pad = pad_sequence(v_i, batch_first=True, padding_value=0.) 
-        
-        attn_output, _ = self.multihead_attn(v_i_pad,v_i_pad,v_i_pad)
-        
-        
-
 class GeoGraph(nn.Module):
     def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, device):
         super(GeoGraph, self).__init__()
