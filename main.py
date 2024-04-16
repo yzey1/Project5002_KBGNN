@@ -176,7 +176,8 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     opt = torch.optim.Adam([
                 {'params': Seq_encoder.parameters()},
                 {'params': Geo_encoder.parameters()},
-                {'params': Poi_embeds.parameters()}], lr=arg.lr)#, weight_decay=arg.weight_decay)
+                {'params': Poi_embeds.parameters()},
+                {'params': MLP.parameters()}], lr=arg.lr)#, weight_decay=arg.weight_decay)
 
     batch_num = len(tr_set) // arg.batch
     train_loader = DataLoader(tr_set, arg.batch, shuffle=True)
@@ -188,6 +189,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     for epoch in range(arg.epoch):
         Seq_encoder.train()
         Geo_encoder.train()
+        MLP.train()
         for bn, (trn_batch, bnk_batch) in enumerate(zip(train_loader, bank_loader)):
             
             print(f'\n epoch {epoch}: batch {bn} / {batch_num}')
@@ -277,19 +279,19 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, datefmt=DATE_FORMAT)
 
-    with open(f'../processed/{ARG.data}/raw/val.pkl', 'rb') as f:
+    with open(f'processed_data/{ARG.data}/raw/val.pkl', 'rb') as f:
         tmp = pickle.load(f)
         n_user, n_poi = pickle.load(f)
         del tmp
 
-    train_set = MyDataset(f'../processed/{ARG.data}', set='train', percentage=ARG.percentage_data)
-    val_set = MyDataset(f'../processed/{ARG.data}', set='test', percentage=ARG.percentage_data)
-    test_set = MyDataset(f'../processed/{ARG.data}', set='val', percentage=ARG.percentage_data)
+    train_set = MyDataset(f'processed_data/{ARG.data}', set='train', percentage=ARG.percentage_data)
+    val_set = MyDataset(f'processed_data/{ARG.data}', set='test', percentage=ARG.percentage_data)
+    test_set = MyDataset(f'processed_data/{ARG.data}', set='val', percentage=ARG.percentage_data)
 
-    with open(f'../processed/{ARG.data}/raw/dist_graph.pkl', 'rb') as f:
+    with open(f'processed_data/{ARG.data}/raw/dist_graph.pkl', 'rb') as f:
         dist_edges = torch.LongTensor(pickle.load(f))
         dist_nei = pickle.load(f)
-    dist_vec = np.load(f'../processed/{ARG.data}/raw/dist_on_graph.npy')
+    dist_vec = np.load(f'processed_data/{ARG.data}/raw/dist_on_graph.npy')
 
     logging.info(f'Data loaded.')
     logging.info(f'user: {n_user}\tpoi: {n_poi}')
