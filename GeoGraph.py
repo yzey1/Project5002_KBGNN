@@ -6,6 +6,18 @@ from torch.nn.utils.rnn import pad_sequence
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import degree
 
+def sequence_mask(lengths, max_len=None):
+    lengths_shape = lengths.shape  # torch.size() is a tuple
+    lengths = lengths.reshape(-1)
+    
+    batch_size = lengths.numel()
+    max_len = max_len or int(lengths.max())
+    lengths_shape += (max_len, )
+    
+    return (torch.arange(0, max_len, device=lengths.device)
+    .type_as(lengths)
+    .unsqueeze(0).expand(batch_size,max_len)
+    .lt(lengths.unsqueeze(1))).reshape(lengths_shape)
 
 class HardAttn(nn.Module):
     def __init__(self, hidden_size):
@@ -94,16 +106,20 @@ class GeoGraph(nn.Module):
             enc = self.gcn[i](enc, self.dist_edges, self.dist_vec)
             enc = F.leaky_relu(enc)
             enc = F.normalize(enc, dim=-1)
-
+        
+        # tar_embed looks like h_t
         tar_embed = enc[data.poi]
         geo_feat = enc[data.x.squeeze()]
+
         aggr_feat = self.attn(geo_feat, tar_embed, sections, seq_lens)
 
         graph_enc = self.split_mean(enc[data.x.squeeze()], sections)
         pred_input = torch.cat((aggr_feat, tar_embed), dim=-1)
 
         pred_logits = self.predictor(pred_input)
-        return self.proj_head(graph_enc), pred_logits
+
+        # proj_head(graph_enc) looks like e_g,u, however it does not apply multi-head self-attention
+        return self.proj_head(graph_enc), pred_logits, tar_embed
     
 class Geo_GCN(nn.Module):
     def __init__(self, in_channels, out_channels, device):
@@ -126,17 +142,4 @@ class Geo_GCN(nn.Module):
         side_embed = torch.sparse.mm(dist_adj, x)
 
         return self.W(side_embed)
-
-def sequence_mask(lengths, max_len=None):
-    lengths_shape = lengths.shape  # torch.size() is a tuple
-    lengths = lengths.reshape(-1)
-    
-    batch_size = lengths.numel()
-    max_len = max_len or int(lengths.max())
-    lengths_shape += (max_len, )
-    
-    return (torch.arange(0, max_len, device=lengths.device)
-    .type_as(lengths)
-    .unsqueeze(0).expand(batch_size,max_len)
-    .lt(lengths.unsqueeze(1))).reshape(lengths_shape)
 
