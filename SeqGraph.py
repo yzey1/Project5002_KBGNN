@@ -113,3 +113,4 @@ class SeqGraph(nn.Module):
         
         pred_logits = self.predictor(pred_input)
         return self.proj_head(sess_feat), pred_logits
+    

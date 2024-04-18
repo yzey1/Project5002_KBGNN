@@ -1,7 +1,5 @@
 dataset_tsmc2014/
 processed_data/
-test_preprocess.py
-test_dataset.py
 __pycache__/
 .DS_Store
-.ipynb_checkpoints/
+log/
