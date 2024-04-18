@@ -23,7 +23,7 @@ ARG.add_argument('--batch', type=int, default=1024,
                  help='Training batch size.')
 ARG.add_argument('--data', type=str, default='nyc',
                  help='Training dataset.')
-ARG.add_argument('--gpu', type=int, default=0,
+ARG.add_argument('--gpu', type=int, default=None,
                  help='Denote training device.')
 ARG.add_argument('--patience', type=int, default=10,
                  help='Early stopping patience.')
