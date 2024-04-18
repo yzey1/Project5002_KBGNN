@@ -92,11 +92,14 @@ def set_seed(seed):
 
 
 class EmbeddingLayer(nn.Module):
-    '''Embedding layer for POI.
+    '''Embedding layer for POI. 
 
     Args:
         n_poi (int): Number of POI.
         embed_dim (int): Embedding dimension.
+
+    Output:
+        torch.Tensor: Embedding vector of POI.
     '''
 
     def __init__(self, n_poi, embed_dim):
