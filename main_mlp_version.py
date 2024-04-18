@@ -62,7 +62,7 @@ def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
     MLP.eval()
 
     with torch.no_grad():
-        for bn, batch in enumerate(loader):
+        for batch in loader:
             e_s, _ = Seq_encoder(batch.to(device), Poi_embeds)
             e_g, _, h_t = Geo_encoder(batch.to(device), Poi_embeds)
             logit = MLP(e_g, e_s, h_t)
