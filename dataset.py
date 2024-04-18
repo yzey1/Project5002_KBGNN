@@ -6,12 +6,9 @@ from tqdm import tqdm
 
 
 class MyDataset(InMemoryDataset):
-    def __init__(self, root='./processed_data/nyc', set='train', percentage=0.1, transform=None, pre_transform=None):
+    def __init__(self, root='./processed_data/nyc', set='train', transform=None, pre_transform=None):
         # set is 'train' or 'test' or 'val'
         self.set = set
-
-        # the percentage of data to be used
-        self.percentage=percentage
         
         super().__init__(root, transform, pre_transform)
         self.load(self.processed_paths[0])
@@ -24,7 +21,7 @@ class MyDataset(InMemoryDataset):
     @property
     def processed_file_names(self):
         # the file to save the processed data
-        return [f'{self.set}_{self.percentage}_seq_graph.pt']
+        return [f'{self.set}_seq_graph.pt']
 
     def download(self):
         # no need to download
@@ -36,7 +33,7 @@ class MyDataset(InMemoryDataset):
             print(f'orignial data num: {len(data)}')
             
         data_list = []
-        for uid, poi, seq, coord, y in tqdm(data[:int(len(data)*self.percentage)]):
+        for uid, poi, seq, coord, y in tqdm(data):
             # the first appearance order of the poi in the sequence
             idx = 0
             x = []
