@@ -213,8 +213,8 @@ if __name__ == '__main__':
         del tmp
 
     train_set = MyDataset(f'./processed_data/{ARG.data}', set='train', percentage=0.1)
-    val_set = MyDataset(f'./processed_data/{ARG.data}', set='test', percentage=1)
-    test_set = MyDataset(f'./processed_data/{ARG.data}', set='val', percentage=1)
+    test_set = MyDataset(f'./processed_data/{ARG.data}', set='test', percentage=1)
+    val_set = MyDataset(f'./processed_data/{ARG.data}', set='val', percentage=1)
 
     with open(f'./processed_data/{ARG.data}/raw/dist_graph.pkl', 'rb') as f:
         dist_edges = torch.LongTensor(pickle.load(f))
