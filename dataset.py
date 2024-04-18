@@ -30,7 +30,7 @@ class MyDataset(InMemoryDataset):
     def process(self):
         with open(osp.join(self.raw_dir, self.raw_file_names[0]), 'rb') as f:
             data = pkl.load(f)
-            print(f'orignial data num: {len(data)}')
+            print(f'orignial data num of {self.set}: {len(data)}')
             
         data_list = []
         for uid, poi, seq, coord, y in tqdm(data):
