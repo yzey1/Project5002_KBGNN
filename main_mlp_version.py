@@ -186,7 +186,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
                 Seq_encoder, Geo_encoder, Poi_embeds, MLP, te_set, arg, device)
         if epoch - best_epoch == arg.patience:
             logging.info(
-                f'Stop training after {arg.patience} epochs without valid improvement.')
+                f'Stop training after {arg.patience} epochs without improvement.')
             break
 
         logging.info(
