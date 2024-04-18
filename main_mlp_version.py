@@ -1,3 +1,4 @@
+import math
 import os
 import torch
 import random
@@ -135,7 +136,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
         {'params': Poi_embeds.parameters()},
         {'params': MLP.parameters()}], lr=arg.lr)  # , weight_decay=arg.weight_decay)
 
-    batch_num = len(tr_set) // arg.batch
+    batch_num = math.ceil(len(tr_set) / arg.batch)
     train_loader = DataLoader(tr_set, arg.batch, shuffle=True)
     bank_loader = DataLoader(tr_set, arg.batch, shuffle=True)
     criterion = nn.BCEWithLogitsLoss()
