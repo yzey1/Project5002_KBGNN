@@ -179,7 +179,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             Seq_encoder, Geo_encoder, Poi_embeds, MLP, va_set, arg, device)
         logging.info('')
         logging.info(
-            f'''Epoch: {epoch + 1} / {arg.epoch}, AUC: {auc}, loss: {logloss}''')
+            f'''Epoch: {epoch + 1} / {arg.epoch}, validation AUC: {auc}, validation logloss: {logloss}''')
         if epoch - best_epoch == arg.patience:
             logging.info(
                 f'Stop training after {arg.patience} epochs without valid improvement.')
@@ -191,7 +191,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
                 Seq_encoder, Geo_encoder, Poi_embeds, MLP, te_set, arg, device)
 
         logging.info(
-            f'''Best valid AUC: {best_auc} at epch {best_epoch + 1}\n''')
+            f'''Best validation AUC: {best_auc} at epch {best_epoch + 1}\n''')
 
     logging.info(f'Training finished, best epoch {best_epoch + 1}')
     logging.info(
