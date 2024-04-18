@@ -181,6 +181,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     for epoch in range(arg.epoch):
         Seq_encoder.train()
         Geo_encoder.train()
+        MLP.train()
         for bn, (trn_batch, bnk_batch) in enumerate(zip(train_loader, bank_loader)):
             trn_batch, bnk_batch = trn_batch.to(device), bnk_batch.to(device)
             label = trn_batch.y.float()
