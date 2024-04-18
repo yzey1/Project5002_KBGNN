@@ -24,7 +24,7 @@ class MyDataset(InMemoryDataset):
     @property
     def processed_file_names(self):
         # the file to save the processed data
-        return [self.set + '_' + str(self.percentage) + '_seq_graph.pt']
+        return [f'{self.set}_{self.percentage}_seq_graph.pt']
 
     def download(self):
         # no need to download
