@@ -92,7 +92,6 @@ def seed_torch(seed):
 class EmbeddingLayer(nn.Module):
     def __init__(self, n_poi, embed_dim):
         super(EmbeddingLayer, self).__init__()
-        self.n_poi = n_poi
         self.embeds = nn.Embedding(n_poi, embed_dim)
         nn.init.xavier_normal_(self.embeds.weight)
 
