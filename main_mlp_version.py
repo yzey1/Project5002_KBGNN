@@ -191,7 +191,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
                 Seq_encoder, Geo_encoder, Poi_embeds, MLP, te_set, arg, device)
 
         logging.info(
-            f'''Best valid AUC: {best_auc} at epch {best_epoch}, AUC: {best_auc}\n''')
+            f'''Best valid AUC: {best_auc} at epch {best_epoch}\n''')
 
     logging.info(f'Training finished, best epoch {best_epoch}')
     logging.info(
@@ -228,4 +228,4 @@ if __name__ == '__main__':
     logging.info(f'user: {n_user}\tpoi: {n_poi}')
     device = torch.device(
         'cpu') if ARG.gpu is None else torch.device(f'cuda:{ARG.gpu}')
-    train_test(train_set, test_set, val_set, ARG, dist_edges, dist_vec, device)
+    train_test(train_set, val_set, test_set, ARG, dist_edges, dist_vec, device)
