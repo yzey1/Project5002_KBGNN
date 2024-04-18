@@ -166,7 +166,6 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
         Geo_encoder.train()
         MLP.train()
         for bn, (trn_batch, bnk_batch) in enumerate(zip(train_loader, bank_loader)):
-            logging.info(f'Epoch: {epoch + 1} / {arg.epoch}, Batch: {bn + 1} / {batch_num}')
             trn_batch, bnk_batch = trn_batch.to(device), bnk_batch.to(device)
             label = trn_batch.y.float()
 
@@ -190,7 +189,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             loss.backward()
             opt.step()
 
-            if (bn + 1) % 200 == 0:
+            if (bn + 1) % 20 == 0:
                 logging.info(
                     f'''Batch: {bn + 1} / {batch_num}, loss: {loss.item()} = Rec: {loss_rec.item()} + Con: {unsup_loss.item()}''')
 
