@@ -92,6 +92,13 @@ def seed_torch(seed):
 
 
 class EmbeddingLayer(nn.Module):
+    '''Embedding layer for POI.
+
+    Args:
+        n_poi (int): Number of POI.
+        embed_dim (int): Embedding dimension.
+    '''
+
     def __init__(self, n_poi, embed_dim):
         super(EmbeddingLayer, self).__init__()
         self.embeds = nn.Embedding(n_poi, embed_dim)
