@@ -224,5 +224,6 @@ if __name__ == '__main__':
     logging.info(f'Data loaded.')
     logging.info(f'user: {n_user}\tpoi: {n_poi}')
     device = torch.device(
-        'cpu') if ARG.gpu is None else torch.device(f'cuda:{ARG.gpu}')
+        'cpu') if ARG.gpu is None or not torch.cuda.is_available() else torch.device(f'cuda:{ARG.gpu}')
+    logging.info(f'Device: {device}')
     train_test(train_set, val_set, test_set, ARG, dist_edges, dist_vec, device)
