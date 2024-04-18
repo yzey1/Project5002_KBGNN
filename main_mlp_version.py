@@ -139,8 +139,8 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     train_loader = DataLoader(tr_set, arg.batch, shuffle=True)
     bank_loader = DataLoader(tr_set, arg.batch, shuffle=True)
     criterion = nn.BCEWithLogitsLoss()
-    best_auc, best_epoch = 0., 0.
-    test_auc, test_loss = 0., 0.
+    best_auc, best_epoch = 0., 0
+    test_auc, test_loss = 0., 0
 
     for epoch in range(arg.epoch):
         Seq_encoder.train()
