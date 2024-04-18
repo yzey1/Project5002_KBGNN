@@ -194,7 +194,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
 
     logging.info(f'Training finished, best epoch {best_epoch + 1}')
     logging.info(
-        f'Valid AUC: {best_auc}, Test AUC: {test_auc}, Test logloss: {test_loss}')
+        f'Validation AUC: {best_auc}, Test AUC: {test_auc}, Test logloss: {test_loss}')
 
 
 if __name__ == '__main__':
