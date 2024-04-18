@@ -150,13 +150,11 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             trn_batch, bnk_batch = trn_batch.to(device), bnk_batch.to(device)
             label = trn_batch.y.float()
 
-            seq_trn_enc, seq_pred = Seq_encoder(trn_batch, Poi_embeds)
+            seq_trn_enc, _ = Seq_encoder(trn_batch, Poi_embeds)
             seq_bnk_enc, _ = Seq_encoder(bnk_batch, Poi_embeds)
-            seq_sup_loss = criterion(seq_pred.squeeze(), label)
 
-            geo_trn_enc, geo_pred, geo_tar = Geo_encoder(trn_batch, Poi_embeds)
+            geo_trn_enc, _, geo_tar = Geo_encoder(trn_batch, Poi_embeds)
             geo_bnk_enc, _, _ = Geo_encoder(bnk_batch, Poi_embeds)
-            geo_sup_loss = criterion(geo_pred.squeeze(), label)
 
             # MLP
             final_pred = MLP(geo_trn_enc, seq_trn_enc, geo_tar)
