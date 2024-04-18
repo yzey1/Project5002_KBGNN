@@ -1,4 +1,8 @@
-import os, torch, random, argparse, logging
+import os
+import torch
+import random
+import argparse
+import logging
 import pickle
 from dataset import MyDataset
 from torch_geometric.loader import DataLoader
@@ -50,7 +54,8 @@ ARG = ARG.parse_args()
 
 
 def cal_ndcg(predicts, labels, user_ids, k):
-    d = {'user': np.squeeze(user_ids), 'predict':np.squeeze(predicts), 'label':np.squeeze(labels)}
+    d = {'user': np.squeeze(user_ids), 'predict': np.squeeze(
+        predicts), 'label': np.squeeze(labels)}
     df = pd.DataFrame(d)
     user_unique = df.user.unique()
 
@@ -61,9 +66,10 @@ def cal_ndcg(predicts, labels, user_ids, k):
         if len(upred) < 2:
             continue
         ulabel = user_srow['label'].tolist()
-        ndcg.append(ndcg_score([ulabel], [upred], k=k)) 
+        ndcg.append(ndcg_score([ulabel], [upred], k=k))
 
     return np.mean(np.array(ndcg))
+
 
 def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
     loader = DataLoader(dataset, arg.batch, shuffle=True)
@@ -78,7 +84,8 @@ def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
             e_s, _ = Seq_encoder(batch.to(device), Poi_embeds)
             e_g, _, h_t = Geo_encoder(batch.to(device), Poi_embeds)
             logit = MLP(e_g, e_s, h_t)
-            logit = torch.sigmoid(logit).squeeze().clone().detach().cpu().numpy()
+            logit = torch.sigmoid(logit).squeeze(
+            ).clone().detach().cpu().numpy()
 
             preds.append(logit)
             labels.append(batch.y.squeeze().cpu().numpy())
@@ -91,6 +98,7 @@ def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
 
     return auc, logloss
 
+
 def seed_torch(seed):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
@@ -98,12 +106,14 @@ def seed_torch(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
 
+
 class EmbeddingLayer(nn.Module):
     def __init__(self, n_poi, embed_dim):
         super(EmbeddingLayer, self).__init__()
         self.n_poi = n_poi
         self.embeds = nn.Embedding(n_poi, embed_dim)
         nn.init.xavier_normal_(self.embeds.weight)
+
     def forward(self, idx):
         return self.embeds(idx)
 
@@ -125,20 +135,24 @@ class integrative_pred(nn.Module):
 
         return pred_logits
 
+
 def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
-    Seq_encoder = SeqGraph(n_user, n_poi, arg.max_step, arg.embed, arg.hid_graph_num, arg.hid_graph_size, device).to(device)
-    Geo_encoder = GeoGraph(n_user, n_poi, arg.gcn_num, arg.embed, dist_edges, dist_vec, device).to(device)
+    Seq_encoder = SeqGraph(n_user, n_poi, arg.max_step, arg.embed,
+                           arg.hid_graph_num, arg.hid_graph_size, device).to(device)
+    Geo_encoder = GeoGraph(n_user, n_poi, arg.gcn_num,
+                           arg.embed, dist_edges, dist_vec, device).to(device)
     Poi_embeds = EmbeddingLayer(n_poi, arg.embed).to(device)
-    Sim_criterion = consistencyLoss(arg.embed, arg.compress_memory_size, arg.compress_t, device).to(device)
+    Sim_criterion = consistencyLoss(
+        arg.embed, arg.compress_memory_size, arg.compress_t, device).to(device)
 
     # MLP
     MLP = integrative_pred(arg.embed).to(device)
 
     opt = torch.optim.Adam([
-                {'params': Seq_encoder.parameters()},
-                {'params': Geo_encoder.parameters()},
-                {'params': Poi_embeds.parameters()},
-                {'params': MLP.parameters()}], lr=arg.lr)#, weight_decay=arg.weight_decay)
+        {'params': Seq_encoder.parameters()},
+        {'params': Geo_encoder.parameters()},
+        {'params': Poi_embeds.parameters()},
+        {'params': MLP.parameters()}], lr=arg.lr)  # , weight_decay=arg.weight_decay)
 
     batch_num = len(tr_set) // arg.batch
     train_loader = DataLoader(tr_set, arg.batch, shuffle=True)
@@ -168,32 +182,38 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             loss_rec = criterion(final_pred.squeeze(), label)
 
             unsup_loss = Sim_criterion(seq_bnk_enc, geo_bnk_enc)
-            #loss = seq_sup_loss + geo_sup_loss + arg.con_weight * unsup_loss
+            # loss = seq_sup_loss + geo_sup_loss + arg.con_weight * unsup_loss
             loss = loss_rec + arg.con_weight * unsup_loss
-            
+
             opt.zero_grad()
             loss.backward()
             opt.step()
-          
+
             if (bn + 1) % 200 == 0:
                 logging.info(
                     f'''Batch: {bn + 1} / {batch_num}, loss: {loss.item()} = Rec: {loss_rec.item()} + Con: {unsup_loss.item()}''')
-              
-        auc, logloss = eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, va_set, arg, device)
+
+        auc, logloss = eval_model(
+            Seq_encoder, Geo_encoder, Poi_embeds, MLP, va_set, arg, device)
         logging.info('')
-        logging.info(f'''Epoch: {epoch + 1} / {arg.epoch}, AUC: {auc}, loss: {logloss}''')
+        logging.info(
+            f'''Epoch: {epoch + 1} / {arg.epoch}, AUC: {auc}, loss: {logloss}''')
         if epoch - best_epoch == arg.patience:
-            logging.info(f'Stop training after {arg.patience} epochs without valid improvement.')
+            logging.info(
+                f'Stop training after {arg.patience} epochs without valid improvement.')
             break
         if auc > best_auc:
             best_auc = auc
             best_epoch = epoch
-            test_auc, test_loss = eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, te_set, arg, device)
+            test_auc, test_loss = eval_model(
+                Seq_encoder, Geo_encoder, Poi_embeds, MLP, te_set, arg, device)
 
-        logging.info(f'''Best valid AUC: {best_auc} at epch {best_epoch}, AUC: {best_auc}\n''')
+        logging.info(
+            f'''Best valid AUC: {best_auc} at epch {best_epoch}, AUC: {best_auc}\n''')
 
     logging.info(f'Training finished, best epoch {best_epoch}')
-    logging.info(f'Valid AUC: {best_auc}, Test AUC: {test_auc}, Test logloss: {test_loss}')
+    logging.info(
+        f'Valid AUC: {best_auc}, Test AUC: {test_auc}, Test logloss: {test_loss}')
 
 
 if __name__ == '__main__':
@@ -202,27 +222,28 @@ if __name__ == '__main__':
     LOG_FORMAT = "%(asctime)s  %(message)s"
     DATE_FORMAT = "%m/%d %H:%M"
     if ARG.log is not None:
-        logging.basicConfig(filename=ARG.log, level=logging.DEBUG, format=LOG_FORMAT, datefmt=DATE_FORMAT)
+        logging.basicConfig(filename=ARG.log, level=logging.DEBUG,
+                            format=LOG_FORMAT, datefmt=DATE_FORMAT)
     else:
-        logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, datefmt=DATE_FORMAT)
+        logging.basicConfig(level=logging.DEBUG,
+                            format=LOG_FORMAT, datefmt=DATE_FORMAT)
 
-    with open(f'./processed/{ARG.data}/raw/val.pkl', 'rb') as f:
+    with open(f'./processed_data/{ARG.data}/raw/val.pkl', 'rb') as f:
         tmp = pickle.load(f)
         n_user, n_poi = pickle.load(f)
         del tmp
 
-    train_set = MyDataset(f'./processed/{ARG.data}', set='train')
-    val_set = MyDataset(f'./processed/{ARG.data}', set='test')
-    test_set = MyDataset(f'./processed/{ARG.data}', set='val')
+    train_set = MyDataset(f'./processed_data/{ARG.data}', set='train')
+    val_set = MyDataset(f'./processed_data/{ARG.data}', set='test')
+    test_set = MyDataset(f'./processed_data/{ARG.data}', set='val')
 
-    with open(f'./processed/{ARG.data}/raw/dist_graph.pkl', 'rb') as f:
+    with open(f'./processed_data/{ARG.data}/raw/dist_graph.pkl', 'rb') as f:
         dist_edges = torch.LongTensor(pickle.load(f))
         dist_nei = pickle.load(f)
-    dist_vec = np.load(f'./processed/{ARG.data}/raw/dist_on_graph.npy')
+    dist_vec = np.load(f'./processed_data/{ARG.data}/raw/dist_on_graph.npy')
 
     logging.info(f'Data loaded.')
     logging.info(f'user: {n_user}\tpoi: {n_poi}')
-    device = torch.device('cpu') if ARG.gpu is None else torch.device(f'cuda:{ARG.gpu}')
+    device = torch.device(
+        'cpu') if ARG.gpu is None else torch.device(f'cuda:{ARG.gpu}')
     train_test(train_set, test_set, val_set, ARG, dist_edges, dist_vec, device)
-
-
