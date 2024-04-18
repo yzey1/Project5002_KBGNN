@@ -36,3 +36,17 @@ Under `nyc` or `tky`, you should see the following files:
 ```
 
 `dist_graph.pkl` is the graph structure of the dataset, containing edges and neighbors; `dist_on_graph.npy` is the distance corresponding to the edges; `train.pkl`, `val.pkl`, and `test.pkl` are the training, validation, and test sets, respectively.
+
+## Training
+
+Run the following command to train the model with default hyperparameters and GPU:
+
+```bash
+python main.py --gpu 0
+```
+
+To check the available hyperparameters, run:
+
+```bash
+python main.py --help
+```
