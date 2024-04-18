@@ -190,7 +190,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             break
 
         logging.info(
-            f'''Best validation AUC: {best_auc} at epch {best_epoch + 1}\n''')
+            f'Best validation AUC: {best_auc} at epoch {best_epoch + 1}\n')
 
     logging.info(f'Training finished, best epoch {best_epoch + 1}')
     logging.info(
