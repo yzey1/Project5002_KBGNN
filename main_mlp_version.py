@@ -184,16 +184,21 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
                 logging.info(
                     f'Epoch: {epoch + 1} / {arg.epoch} Batch: {bn + 1} / {batch_num}, loss: {loss.item()} = Rec: {loss_rec.item()} + {ARG.con_weight} * Con: {unsup_loss.item()}')
 
+        # validation
         auc, logloss = eval_model(
             Seq_encoder, Geo_encoder, Poi_embeds, MLP, va_set, arg, device)
         logging.info('')
         logging.info(
             f'''Epoch: {epoch + 1} / {arg.epoch}, validation AUC: {auc}, validation logloss: {logloss}''')
+
+        # update best epoch
         if auc > best_auc:
             best_auc = auc
             best_epoch = epoch
             test_auc, test_loss = eval_model(
                 Seq_encoder, Geo_encoder, Poi_embeds, MLP, te_set, arg, device)
+
+        # early stopping
         if epoch - best_epoch == arg.patience:
             logging.info(
                 f'Stop training after {arg.patience} epochs without improvement.')
