@@ -65,37 +65,6 @@ def cal_ndcg(predicts, labels, user_ids, k):
 
     return np.mean(np.array(ndcg))
 
-'''
-def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, dataset, arg, device):
-    loader = DataLoader(dataset, arg.batch, shuffle=True)
-    seq_preds, geo_preds, labels, pois = [], [], [], []
-    Seq_encoder.eval()
-    Geo_encoder.eval()
-
-    with torch.no_grad():
-        for bn, batch in enumerate(loader):
-            _, seq_logit = Seq_encoder(batch.to(device), Poi_embeds)
-            _, geo_logit = Geo_encoder(batch.to(device), Poi_embeds)
-
-            seq_logits = torch.sigmoid(seq_logit)\
-                .squeeze().clone().detach().cpu().numpy()
-            geo_logits = torch.sigmoid(geo_logit)\
-                .squeeze().clone().detach().cpu().numpy()
-
-            seq_preds.append(seq_logits)
-            geo_preds.append(geo_logits)
-            labels.append(batch.y.squeeze().cpu().numpy())
-    
-    seq_preds = np.concatenate(seq_preds, 0, dtype=np.float64)
-    geo_preds = np.concatenate(geo_preds, 0, dtype=np.float64)
-    labels = np.concatenate(labels, 0, dtype=np.float64)
-    seq_auc = roc_auc_score(labels, seq_preds)
-    seq_logloss = log_loss(labels, seq_preds)
-    geo_auc = roc_auc_score(labels, geo_preds)
-    geo_logloss = log_loss(labels, geo_preds)
-    return seq_auc, seq_logloss, geo_auc, geo_logloss
-'''
-
 def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
     loader = DataLoader(dataset, arg.batch, shuffle=True)
     preds, labels, pois = [], [], []
@@ -205,31 +174,11 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             opt.zero_grad()
             loss.backward()
             opt.step()
-
-            #if (bn + 1) % 200 == 0:
-            #    logging.info(f'''Batch: {bn + 1} / {batch_num}, loss: {loss.item()} =
-            #                    Seq:{ seq_sup_loss.item()} + Geo:{ geo_sup_loss.item()} + Con: {unsup_loss.mean(-1).item()}''')
+          
             if (bn + 1) % 200 == 0:
                 logging.info(
                     f'''Batch: {bn + 1} / {batch_num}, loss: {loss.item()} = Rec: {loss_rec.item()} + Con: {unsup_loss.item()}''')
-
-        #seq_auc, seq_logloss, geo_auc, geo_logloss= eval_model(Seq_encoder, Geo_encoder, Poi_embeds, va_set, arg, device)
-        #logging.info('')
-        #logging.info(f'''Epoch: {epoch + 1} / {arg.epoch},
-        #    Seq_AUC: {seq_auc}, Seq_loss: {seq_logloss}, Geo_AUC: {geo_auc}, Geo_loss: {geo_logloss}''')
-
-        #if epoch - best_epoch == arg.patience:
-        #    logging.info(f'Stop training after {arg.patience} epochs without valid improvement.')
-        #    break
-        #if(seq_auc > best_auc or geo_auc > best_auc):
-        #    best_auc = max(seq_auc, geo_auc)
-        #    best_epoch = epoch
-        #    bst_seq_auc, bst_seq_logloss, bst_geo_auc, bst_geo_logloss = eval_model(Seq_encoder, Geo_encoder, Poi_embeds, te_set, arg, device)
-        #    test_auc = max(seq_auc, geo_auc)
-        #    test_loss = min(seq_logloss, geo_logloss)
-
-        #logging.info(f'''Best valid AUC: {best_auc} at epch {best_epoch},
-        #    Seq_AUC: {bst_seq_auc}, Seq_loss: {bst_seq_logloss}, Geo_AUC: {bst_geo_auc}, Geo_loss: {bst_geo_logloss}\n''')
+              
         auc, logloss = eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, va_set, arg, device)
         logging.info('')
         logging.info(f'''Epoch: {epoch + 1} / {arg.epoch}, AUC: {auc}, loss: {logloss}''')
