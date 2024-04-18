@@ -83,7 +83,7 @@ def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
     return auc, logloss
 
 
-def seed_torch(seed):
+def set_seed(seed):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
@@ -205,7 +205,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
 
 
 if __name__ == '__main__':
-    seed_torch(ARG.seed)
+    set_seed(ARG.seed)
 
     LOG_FORMAT = "%(asctime)s  %(message)s"
     DATE_FORMAT = "%m/%d %H:%M:%S"
