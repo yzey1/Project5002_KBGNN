@@ -6,9 +6,8 @@ import logging
 import pickle
 from dataset import MyDataset
 from torch_geometric.loader import DataLoader
-from sklearn.metrics import roc_auc_score, ndcg_score, log_loss
+from sklearn.metrics import roc_auc_score, log_loss
 import numpy as np
-import pandas as pd
 from GeoGraph import GeoGraph
 from SeqGraph import SeqGraph
 from consistency import consistencyLoss
@@ -51,24 +50,6 @@ ARG.add_argument('--compress_t', type=float, default=0.01,
                  help='Softmax temperature')
 
 ARG = ARG.parse_args()
-
-
-def cal_ndcg(predicts, labels, user_ids, k):
-    d = {'user': np.squeeze(user_ids), 'predict': np.squeeze(
-        predicts), 'label': np.squeeze(labels)}
-    df = pd.DataFrame(d)
-    user_unique = df.user.unique()
-
-    ndcg = []
-    for user_id in user_unique:
-        user_srow = df.loc[df['user'] == user_id]
-        upred = user_srow['predict'].tolist()
-        if len(upred) < 2:
-            continue
-        ulabel = user_srow['label'].tolist()
-        ndcg.append(ndcg_score([ulabel], [upred], k=k))
-
-    return np.mean(np.array(ndcg))
 
 
 def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
