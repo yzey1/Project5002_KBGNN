@@ -49,7 +49,7 @@ ARG.add_argument('--compress_memory_size', type=int, default=12800,
                  help='Memory bank size')
 ARG.add_argument('--compress_t', type=float, default=0.01,
                  help='Softmax temperature')
-ARG.add_argument('--train_percentage', type=float, default=0.1,
+ARG.add_argument('--train_percentage', type=float, default=1,
                  help='Percentage of training set')
 
 ARG = ARG.parse_args()
