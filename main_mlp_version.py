@@ -16,7 +16,7 @@ import torch.nn as nn
 
 ARG = argparse.ArgumentParser()
 ARG.add_argument('--epoch', type=int, default=140,
-                 help='Epoch num.')
+                 help='Max epoch num.')
 ARG.add_argument('--seed', type=int, default=98765,
                  help='Random seed.')
 ARG.add_argument('--batch', type=int, default=128,
@@ -24,7 +24,7 @@ ARG.add_argument('--batch', type=int, default=128,
 ARG.add_argument('--data', type=str, default='nyc',
                  help='Training dataset.')
 ARG.add_argument('--gpu', type=int, default=None,
-                 help='Denote training device.')
+                 help='Denote training device. GPU is denoted by the index (e.g., 0, 1).')
 ARG.add_argument('--patience', type=int, default=10,
                  help='Early stopping patience.')
 ARG.add_argument('--embed', type=int, default=64,
