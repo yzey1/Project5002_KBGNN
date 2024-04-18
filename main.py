@@ -13,6 +13,8 @@ from GeoGraph import GeoGraph
 from SeqGraph import SeqGraph
 from consistency import consistencyLoss
 import torch.nn as nn
+from datetime import datetime
+
 
 ARG = argparse.ArgumentParser()
 ARG.add_argument('--epoch', type=int, default=140,
@@ -41,8 +43,6 @@ ARG.add_argument('--weight_decay', type=float, default=5e-4,
                  help='Weight decay rate')
 ARG.add_argument('--lr', type=float, default=1e-3,
                  help='Learning rate.')
-ARG.add_argument('--log', type=str, default=None,
-                 help='Log file path.')
 ARG.add_argument('--con_weight', type=float, default=0.01,
                  help='Weight of consistency loss')
 ARG.add_argument('--compress_memory_size', type=int, default=12800,
@@ -217,12 +217,13 @@ if __name__ == '__main__':
 
     LOG_FORMAT = "%(asctime)s  %(message)s"
     DATE_FORMAT = "%m/%d %H:%M:%S"
-    if ARG.log is not None:
-        logging.basicConfig(filename=ARG.log, level=logging.DEBUG,
-                            format=LOG_FORMAT, datefmt=DATE_FORMAT)
-    else:
-        logging.basicConfig(level=logging.DEBUG,
-                            format=LOG_FORMAT, datefmt=DATE_FORMAT)
+    if not os.path.exists('./log'):
+        os.makedirs('./log')
+    current_datetime = datetime.now().strftime('%m%d_%H_%M_%S')
+    logging.basicConfig(filename=f'./log/{current_datetime}.log', level=logging.DEBUG,
+                        format=LOG_FORMAT, datefmt=DATE_FORMAT)
+
+    logging.info(f'Arguments: {ARG}')
 
     with open(f'./processed_data/{ARG.data}/raw/val.pkl', 'rb') as f:
         tmp = pickle.load(f)

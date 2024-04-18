@@ -2,3 +2,4 @@ dataset_tsmc2014/
 processed_data/
 __pycache__/
 .DS_Store
+log/
