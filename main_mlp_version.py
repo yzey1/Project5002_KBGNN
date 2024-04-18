@@ -166,6 +166,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
         Geo_encoder.train()
         MLP.train()
         for bn, (trn_batch, bnk_batch) in enumerate(zip(train_loader, bank_loader)):
+            logging.info(f'Epoch: {epoch + 1} / {arg.epoch}, Batch: {bn + 1} / {batch_num}')
             trn_batch, bnk_batch = trn_batch.to(device), bnk_batch.to(device)
             label = trn_batch.y.float()
 
@@ -220,7 +221,7 @@ if __name__ == '__main__':
     seed_torch(ARG.seed)
 
     LOG_FORMAT = "%(asctime)s  %(message)s"
-    DATE_FORMAT = "%m/%d %H:%M"
+    DATE_FORMAT = "%m/%d %H:%M:%S"
     if ARG.log is not None:
         logging.basicConfig(filename=ARG.log, level=logging.DEBUG,
                             format=LOG_FORMAT, datefmt=DATE_FORMAT)
@@ -233,9 +234,9 @@ if __name__ == '__main__':
         n_user, n_poi = pickle.load(f)
         del tmp
 
-    train_set = MyDataset(f'./processed_data/{ARG.data}', set='train')
-    val_set = MyDataset(f'./processed_data/{ARG.data}', set='test')
-    test_set = MyDataset(f'./processed_data/{ARG.data}', set='val')
+    train_set = MyDataset(f'./processed_data/{ARG.data}', set='train', percentage=0.1)
+    val_set = MyDataset(f'./processed_data/{ARG.data}', set='test', percentage=1)
+    test_set = MyDataset(f'./processed_data/{ARG.data}', set='val', percentage=1)
 
     with open(f'./processed_data/{ARG.data}/raw/dist_graph.pkl', 'rb') as f:
         dist_edges = torch.LongTensor(pickle.load(f))
