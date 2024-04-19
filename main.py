@@ -14,6 +14,7 @@ from SeqGraph import SeqGraph
 from consistency import consistencyLoss
 import torch.nn as nn
 from datetime import datetime
+from model import EmbeddingLayer, MLP
 
 
 ARG = argparse.ArgumentParser()
@@ -89,42 +90,6 @@ def set_seed(seed):
     torch.cuda.manual_seed(seed)
 
 
-class EmbeddingLayer(nn.Module):
-    '''Embedding layer for POI. 
-
-    Args:
-        n_poi (int): Number of POI.
-        embed_dim (int): Embedding dimension.
-
-    Output:
-        torch.Tensor: Embedding vector of POI.
-    '''
-
-    def __init__(self, n_poi, embed_dim):
-        super(EmbeddingLayer, self).__init__()
-        self.embeds = nn.Embedding(n_poi, embed_dim)
-        nn.init.xavier_normal_(self.embeds.weight)
-
-    def forward(self, idx):
-        return self.embeds(idx)
-
-
-class integrative_pred(nn.Module):
-    def __init__(self, embed_dim):
-        super(integrative_pred, self).__init__()
-        self.embed_dim = embed_dim
-
-        self.predictor = nn.Sequential(
-            nn.Linear(3 * embed_dim, embed_dim),
-            nn.LeakyReLU(inplace=True),
-            nn.Linear(embed_dim, 1)
-        )
-
-    def forward(self, e_g, e_s, h_t):
-        flat_input = torch.cat((e_g, e_s, h_t), dim=-1)
-        pred_logits = self.predictor(flat_input)
-
-        return pred_logits
 
 
 def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
@@ -133,17 +98,15 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     Geo_encoder = GeoGraph(n_user, n_poi, arg.gcn_num,
                            arg.embed, dist_edges, dist_vec, device).to(device)
     Poi_embeds = EmbeddingLayer(n_poi, arg.embed).to(device)
+    Predictor = MLP(arg.embed).to(device)
     Sim_criterion = consistencyLoss(
         arg.embed, arg.compress_memory_size, arg.compress_t, device).to(device)
-
-    # MLP
-    MLP = integrative_pred(arg.embed).to(device)
 
     opt = torch.optim.Adam([
         {'params': Seq_encoder.parameters()},
         {'params': Geo_encoder.parameters()},
         {'params': Poi_embeds.parameters()},
-        {'params': MLP.parameters()}], lr=arg.lr)
+        {'params': Predictor.parameters()}], lr=arg.lr)
 
     batch_num = math.ceil(len(tr_set) / arg.batch)
     train_loader = DataLoader(tr_set, arg.batch, shuffle=True)
@@ -155,7 +118,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     for epoch in range(arg.epoch):
         Seq_encoder.train()
         Geo_encoder.train()
-        MLP.train()
+        Predictor.train()
         for bn, (trn_batch, bnk_batch) in enumerate(zip(train_loader, bank_loader)):
             trn_batch, bnk_batch = trn_batch.to(device), bnk_batch.to(device)
             label = trn_batch.y.float()
@@ -166,12 +129,10 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             geo_trn_enc, geo_tar = Geo_encoder(trn_batch, Poi_embeds)
             geo_bnk_enc, _ = Geo_encoder(bnk_batch, Poi_embeds)
 
-            # MLP
-            final_pred = MLP(geo_trn_enc, seq_trn_enc, geo_tar)
-            loss_rec = criterion(final_pred.squeeze(), label)
+            pred = Predictor(geo_trn_enc, seq_trn_enc, geo_tar)
+            loss_rec = criterion(pred.squeeze(), label)
 
             unsup_loss = Sim_criterion(seq_bnk_enc, geo_bnk_enc)
-            # loss = seq_sup_loss + geo_sup_loss + arg.con_weight * unsup_loss
             loss = loss_rec + arg.con_weight * unsup_loss
 
             opt.zero_grad()
@@ -184,7 +145,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
 
         # validation
         auc, logloss = eval_model(
-            Seq_encoder, Geo_encoder, Poi_embeds, MLP, va_set, arg, device)
+            Seq_encoder, Geo_encoder, Poi_embeds, Predictor, va_set, arg, device)
         logging.info('')
         logging.info(
             f'Epoch: {epoch + 1} / {arg.epoch}, validation AUC: {auc}, validation logloss: {logloss}')
@@ -194,7 +155,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             best_auc = auc
             best_epoch = epoch
             test_auc, test_loss = eval_model(
-                Seq_encoder, Geo_encoder, Poi_embeds, MLP, te_set, arg, device)
+                Seq_encoder, Geo_encoder, Poi_embeds, Predictor, te_set, arg, device)
 
         # early stopping
         if epoch - best_epoch == arg.patience:

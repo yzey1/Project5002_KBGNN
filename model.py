@@ -1,0 +1,40 @@
+import torch
+import torch.nn as nn
+from GeoGraph import GeoGraph
+from SeqGraph import SeqGraph
+
+class EmbeddingLayer(nn.Module):
+    '''Embedding layer for POI. 
+
+    Args:
+        n_poi (int): Number of POI.
+        embed_dim (int): Embedding dimension.
+
+    Output:
+        torch.Tensor: Embedding vector of POI.
+    '''
+
+    def __init__(self, n_poi, embed_dim):
+        super(EmbeddingLayer, self).__init__()
+        self.embeds = nn.Embedding(n_poi, embed_dim)
+        nn.init.xavier_normal_(self.embeds.weight)
+
+    def forward(self, idx):
+        return self.embeds(idx)
+
+class MLP(nn.Module):
+    def __init__(self, embed_dim):
+        super(MLP, self).__init__()
+        self.embed_dim = embed_dim
+
+        self.predictor = nn.Sequential(
+            nn.Linear(3 * embed_dim, embed_dim),
+            nn.LeakyReLU(inplace=True),
+            nn.Linear(embed_dim, 1)
+        )
+
+    def forward(self, e_g, e_s, h_t):
+        flat_input = torch.cat((e_g, e_s, h_t), dim=-1)
+        pred_logits = self.predictor(flat_input)
+
+        return pred_logits
