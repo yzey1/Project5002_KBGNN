@@ -46,8 +46,7 @@ class HardAttn(nn.Module):
         seq_feat = (v_i_pad * attn_weight.unsqueeze(-1)).sum(1)
         return self.V(seq_feat)
 
-### add multi-head self-attention
-    
+# add multi-head self-attention mechanism  
 class SelfAttn(nn.Module):
     def __init__(self, embed_dim, num_heads):
         super(SelfAttn, self).__init__()
@@ -60,9 +59,31 @@ class SelfAttn(nn.Module):
         
         attn_output, _ = self.multihead_attn(v_i_pad,v_i_pad,v_i_pad)
         
-        return attn_output
-        
-        
+        return attn_output  
+
+
+class Geo_GCN(nn.Module):
+    def __init__(self, in_channels, out_channels, device):
+        super(Geo_GCN, self).__init__()
+        self.W = nn.Linear(in_channels, out_channels).to(device)
+        self.init_weights()
+
+    def init_weights(self):
+        nn.init.xavier_uniform_(self.W.weight)
+
+    def forward(self, x, edge_index, dist_vec):
+        row, col = edge_index
+        deg = degree(col, x.size(0), dtype=x.dtype)
+        deg_inv_sqrt = deg.pow(-0.5)
+        deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
+        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
+
+        dist_weight = torch.exp(-(dist_vec ** 2))
+        dist_adj = torch.sparse_coo_tensor(edge_index, dist_weight * norm)
+        side_embed = torch.sparse.mm(dist_adj, x)
+
+        return self.W(side_embed)
+
 
 class GeoGraph(nn.Module):
     def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, device):
@@ -147,26 +168,4 @@ class GeoGraph(nn.Module):
         # proj_head(graph_enc) looks like e_g,u, however it does not apply multi-head self-attention
         # return self.proj_head(graph_enc), pred_logits, tar_embed
         return aggr_feat, pred_logits, tar_embed
-    
-class Geo_GCN(nn.Module):
-    def __init__(self, in_channels, out_channels, device):
-        super(Geo_GCN, self).__init__()
-        self.W = nn.Linear(in_channels, out_channels).to(device)
-        self.init_weights()
-
-    def init_weights(self):
-        nn.init.xavier_uniform_(self.W.weight)
-
-    def forward(self, x, edge_index, dist_vec):
-        row, col = edge_index
-        deg = degree(col, x.size(0), dtype=x.dtype)
-        deg_inv_sqrt = deg.pow(-0.5)
-        deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
-        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
-
-        dist_weight = torch.exp(-(dist_vec ** 2))
-        dist_adj = torch.sparse_coo_tensor(edge_index, dist_weight * norm)
-        side_embed = torch.sparse.mm(dist_adj, x)
-
-        return self.W(side_embed)
     
