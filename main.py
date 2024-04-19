@@ -66,7 +66,7 @@ def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
     with torch.no_grad():
         for batch in loader:
             e_s = Seq_encoder(batch.to(device), Poi_embeds)
-            e_g, _, h_t = Geo_encoder(batch.to(device), Poi_embeds)
+            e_g, h_t = Geo_encoder(batch.to(device), Poi_embeds)
             logit = MLP(e_g, e_s, h_t)
             logit = torch.sigmoid(logit).squeeze(
             ).clone().detach().cpu().numpy()
@@ -165,8 +165,8 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             seq_trn_enc = Seq_encoder(trn_batch, Poi_embeds)
             seq_bnk_enc = Seq_encoder(bnk_batch, Poi_embeds)
 
-            geo_trn_enc, _, geo_tar = Geo_encoder(trn_batch, Poi_embeds)
-            geo_bnk_enc, _, _ = Geo_encoder(bnk_batch, Poi_embeds)
+            geo_trn_enc, geo_tar = Geo_encoder(trn_batch, Poi_embeds)
+            geo_bnk_enc, _ = Geo_encoder(bnk_batch, Poi_embeds)
 
             # MLP
             final_pred = MLP(geo_trn_enc, seq_trn_enc, geo_tar)

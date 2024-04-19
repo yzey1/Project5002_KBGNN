@@ -139,4 +139,4 @@ class GeoGraph(nn.Module):
 
         # proj_head(graph_enc) looks like e_g,u, however it does not apply multi-head self-attention
         # return self.proj_head(graph_enc), pred_logits, tar_embed
-        return aggr_feat, None, tar_embed
+        return aggr_feat, tar_embed
