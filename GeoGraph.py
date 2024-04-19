@@ -63,6 +63,14 @@ class Geo_GCN(nn.Module):
 
 # GeoGraph Neural Network
 class GeoGraph(nn.Module):
+    """
+    Args:
+        n_user: number of users
+        n_poi: number of POIs
+        embed_dim: dimension of embedding vectors
+        gcn_num: number of GCN layers
+        
+    """
     # initialization
     def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, device):
         super(GeoGraph, self).__init__()
@@ -73,24 +81,23 @@ class GeoGraph(nn.Module):
         self.device = device
 
         # construct distance edges tensor
+        # add reverse edge and self-loop edge to update the geograph
         self.dist_edges = dist_edges.to(device)
-        loop_index = torch.arange(0, n_poi).unsqueeze(
-            0).repeat(2, 1).to(device)
-        self.dist_edges = torch.cat(
-            (self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1
-        )
-        # construct distance vector tensor
+        loop_index = torch.arange(0, n_poi).unsqueeze(0).repeat(2, 1).to(device)
+        self.dist_edges = torch.cat((self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1)
+        
+        # update distance vector tensor to match with dist_edges
         dist_vec = np.concatenate((dist_vec, dist_vec, np.zeros(self.n_poi)))
         self.dist_vec = torch.Tensor(dist_vec).to(device)
 
-        # Projection head module
+        # define a sequential model with two linear transformations
         self.proj_head = nn.Sequential(
             nn.Linear(embed_dim, embed_dim),
             nn.LeakyReLU(inplace=True),
             nn.Linear(embed_dim, embed_dim)
         )
 
-        # GCN module
+        # initialize GCN module, selfAttn, weights
         self.gcn = nn.ModuleList()
         for _ in range(self.gcn_num):
             self.gcn.append(Geo_GCN(embed_dim, embed_dim, device).to(device))
@@ -119,21 +126,21 @@ class GeoGraph(nn.Module):
         return torch.stack(mean_embeds)
 
     def forward(self, data, poi_embeds):
-        batch_idx = data.batch
-        seq_lens = torch.bincount(batch_idx)
-        sections = tuple(seq_lens.cpu().numpy())
-        enc = poi_embeds.embeds.weight
+        batch_idx = data.batch  # batch index
+        seq_lens = torch.bincount(batch_idx)   # number of POIs in the batch
+        sections = tuple(seq_lens.cpu().numpy())  # transform to tuple
+        enc = poi_embeds.embeds.weight  # get the embeddings of POI
         for i in range(self.gcn_num):
             enc = self.gcn[i](enc, self.dist_edges, self.dist_vec)
             enc = F.leaky_relu(enc)
             enc = F.normalize(enc, dim=-1)
 
-        # tar_embed looks like h_t
-        tar_embed = enc[data.poi]  # embeddings of the target nodes
+        # embeddings of the target nodes
+        tar_embed = enc[data.poi]  
         # embeddings of other nodes in the graph
         geo_feat = enc[data.x.squeeze()]
 
-        # add multihead self-attention
+        # apply multihead self-attention
         self_attn_feat = self.selfAttn(geo_feat, sections)
         # aggregate self-attention features to obtain semantic representation e_g,u
         aggr_feat = torch.mean(self_attn_feat, dim=1)
