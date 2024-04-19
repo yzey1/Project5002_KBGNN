@@ -6,64 +6,40 @@ from torch.nn.utils.rnn import pad_sequence
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import degree
 
-# generate a sequence mask, marks the positions of valid elements
+
 def sequence_mask(lengths, max_len=None):
+    # generate a sequence mask, marks the positions of valid elements
     lengths_shape = lengths.shape  # torch.size() is a tuple
     lengths = lengths.reshape(-1)
-    
+
     batch_size = lengths.numel()
     max_len = max_len or int(lengths.max())
     lengths_shape += (max_len, )
-    
+
     return (torch.arange(0, max_len, device=lengths.device)
-    .type_as(lengths)
-    .unsqueeze(0).expand(batch_size,max_len)
-    .lt(lengths.unsqueeze(1))).reshape(lengths_shape)
+            .type_as(lengths)
+            .unsqueeze(0).expand(batch_size, max_len)
+            .lt(lengths.unsqueeze(1))).reshape(lengths_shape)
 
-class HardAttn(nn.Module):
-    def __init__(self, hidden_size):
-        super(HardAttn, self).__init__()
-        self.hidden_size = hidden_size
-        self.K = nn.Linear(hidden_size, hidden_size) # linear transformation for key
-        self.Q = nn.Linear(hidden_size, hidden_size) # linear transformation for query
-        self.V = nn.Linear(hidden_size, hidden_size) # linear transformation for value
 
-        for w in self.modules():
-            if isinstance(w, nn.Linear):
-                nn.init.xavier_normal_(w.weight)
-
-    def forward(self, sess_embed, query, sections, seq_lens):
-        v_i = torch.split(sess_embed, sections) # split session embeddings based on sections
-        v_i_pad = pad_sequence(v_i, batch_first=True, padding_value=0.) # Pad the split embeddings for same sequence length
-        
-        v_i_pad = self.K(v_i_pad) # apply linear transformation
-        query = self.Q(query)
-        seq_mask = sequence_mask(seq_lens) # generate sequence mask to identify padding positions
-        
-        attn_weight = (v_i_pad * query.unsqueeze(1)).sum(-1)
-        pad_val = (-2 ** 32 + 1) * torch.ones_like(attn_weight) # generate a tensor with the same shape as attn_weight, filled with a very small value
-        attn_weight = torch.where(seq_mask, attn_weight, pad_val).softmax(-1)
-
-        seq_feat = (v_i_pad * attn_weight.unsqueeze(-1)).sum(1) # obtain the final sequence feature
-        return self.V(seq_feat)
-
-# add multi-head self-attention mechanism  
 class SelfAttn(nn.Module):
     def __init__(self, embed_dim, num_heads):
         super(SelfAttn, self).__init__()
-        self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads, batch_first=True)
-    
+        self.multihead_attn = nn.MultiheadAttention(
+            embed_dim, num_heads, batch_first=True)
+
     def forward(self, sess_embed, sections):
         v_i = torch.split(sess_embed, sections)
         v_i_pad = pad_sequence(v_i, batch_first=True, padding_value=0.)
-        # v_i = torch.stack(v_i) 
-        
-        attn_output, _ = self.multihead_attn(v_i_pad, v_i_pad, v_i_pad)
-        
-        return attn_output  
+        # v_i = torch.stack(v_i)
 
-# message calculation between two nodes, equation(2)
+        attn_output, _ = self.multihead_attn(v_i_pad, v_i_pad, v_i_pad)
+
+        return attn_output
+
+
 class Geo_GCN(nn.Module):
+    # message calculation between two nodes, equation(2)
     def __init__(self, in_channels, out_channels, device):
         super(Geo_GCN, self).__init__()
         self.W = nn.Linear(in_channels, out_channels).to(device)
@@ -85,8 +61,9 @@ class Geo_GCN(nn.Module):
 
         return self.W(side_embed)
 
-# GeoGraph Neural Network
+
 class GeoGraph(nn.Module):
+    # GeoGraph Neural Network
     def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, device):
         super(GeoGraph, self).__init__()
         self.n_user = n_user
@@ -97,7 +74,8 @@ class GeoGraph(nn.Module):
 
         # construct distance edges tensor
         self.dist_edges = dist_edges.to(device)
-        loop_index = torch.arange(0, n_poi).unsqueeze(0).repeat(2, 1).to(device)
+        loop_index = torch.arange(0, n_poi).unsqueeze(
+            0).repeat(2, 1).to(device)
         self.dist_edges = torch.cat(
             (self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1
         )
@@ -105,18 +83,11 @@ class GeoGraph(nn.Module):
         dist_vec = np.concatenate((dist_vec, dist_vec, np.zeros(self.n_poi)))
         self.dist_vec = torch.Tensor(dist_vec).to(device)
 
-        self.attn = HardAttn(self.embed_dim).to(device)
         # Projection head module
         self.proj_head = nn.Sequential(
-            nn.Linear(embed_dim, embed_dim), 
+            nn.Linear(embed_dim, embed_dim),
             nn.LeakyReLU(inplace=True),
             nn.Linear(embed_dim, embed_dim)
-        )
-        # Predictor module
-        self.predictor = nn.Sequential(
-            nn.Linear(2 * embed_dim, embed_dim),
-            nn.LeakyReLU(inplace=True),
-            nn.Linear(embed_dim, 1)
         )
 
         # GCN module
@@ -143,8 +114,9 @@ class GeoGraph(nn.Module):
     # split features by batch and compute the mean for each batch
     def split_mean(self, section_feat, sections):
         section_embed = torch.split(section_feat, sections)
-        mean_embeds = [torch.mean(embeddings, dim=0) for embeddings in section_embed]
-        return torch.stack(mean_embeds) 
+        mean_embeds = [torch.mean(embeddings, dim=0)
+                       for embeddings in section_embed]
+        return torch.stack(mean_embeds)
 
     def forward(self, data, poi_embeds):
         batch_idx = data.batch
@@ -155,25 +127,17 @@ class GeoGraph(nn.Module):
             enc = self.gcn[i](enc, self.dist_edges, self.dist_vec)
             enc = F.leaky_relu(enc)
             enc = F.normalize(enc, dim=-1)
-        
+
         # tar_embed looks like h_t
-        tar_embed = enc[data.poi] # embeddings of the target nodes
-        geo_feat = enc[data.x.squeeze()] # embeddings of other nodes in the graph
-        
-        attn_feat = self.attn(geo_feat, tar_embed, sections, seq_lens)
-        
-        
-        ## add multihead self-attention 
+        tar_embed = enc[data.poi]  # embeddings of the target nodes
+        # embeddings of other nodes in the graph
+        geo_feat = enc[data.x.squeeze()]
+
+        # add multihead self-attention
         self_attn_feat = self.selfAttn(geo_feat, sections)
-        ## aggregate self-attention features to obtain semantic representation e_g,u
+        # aggregate self-attention features to obtain semantic representation e_g,u
         aggr_feat = torch.mean(self_attn_feat, dim=1)
-
-        graph_enc = self.split_mean(enc[data.x.squeeze()], sections)
-        pred_input = torch.cat((aggr_feat, tar_embed), dim=-1)
-
-        pred_logits = self.predictor(pred_input)
 
         # proj_head(graph_enc) looks like e_g,u, however it does not apply multi-head self-attention
         # return self.proj_head(graph_enc), pred_logits, tar_embed
-        return aggr_feat, pred_logits, tar_embed
-    
+        return aggr_feat, None, tar_embed
