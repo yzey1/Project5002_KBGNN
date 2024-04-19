@@ -24,14 +24,29 @@ class SelfAttn(nn.Module):
 
 class Geo_GCN(nn.Module):
     # message calculation between two nodes, equation(2)
+    """
+    compute the message from one node to its neighboring node
+    equation(2) in Methodology part B 
+
+    Args:
+        x: POI representations from last layer
+        edge_index: the index of source node and destination node of the edge
+        dist_vec: the vector of the distance between two nodes
+
+    return:
+        self.W(side_embed): the computed message
+    """
+    # initialize the linear transformation
     def __init__(self, in_channels, out_channels, device):
         super(Geo_GCN, self).__init__()
         self.W = nn.Linear(in_channels, out_channels).to(device)
         self.init_weights()
-
+        
+    # initialize the weight matrices
     def init_weights(self):
         nn.init.xavier_uniform_(self.W.weight)
 
+    # compute the message from one POI to its neighbors
     def forward(self, x, edge_index, dist_vec):
         row, col = edge_index
         deg = degree(col, x.size(0), dtype=x.dtype)
@@ -42,12 +57,13 @@ class Geo_GCN(nn.Module):
         dist_weight = torch.exp(-(dist_vec ** 2))
         dist_adj = torch.sparse_coo_tensor(edge_index, dist_weight * norm)
         side_embed = torch.sparse.mm(dist_adj, x)
-
+        # make linear transformation with the weight matrice
         return self.W(side_embed)
 
 
+# GeoGraph Neural Network
 class GeoGraph(nn.Module):
-    # GeoGraph Neural Network
+    # initialization
     def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, device):
         super(GeoGraph, self).__init__()
         self.n_user = n_user
