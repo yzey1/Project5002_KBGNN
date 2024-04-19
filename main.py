@@ -57,7 +57,7 @@ ARG = ARG.parse_args()
 
 def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
     loader = DataLoader(dataset, arg.batch, shuffle=True)
-    preds, labels, pois = [], [], []
+    preds, labels = [], []
 
     Seq_encoder.eval()
     Geo_encoder.eval()
@@ -242,7 +242,11 @@ if __name__ == '__main__':
 
     logging.info(f'Data loaded.')
     logging.info(f'user: {n_user}\tpoi: {n_poi}')
-    device = torch.device(
-        'cpu') if ARG.gpu is None or not torch.cuda.is_available() else torch.device(f'cuda:{ARG.gpu}')
+
+    if ARG.gpu is None or not torch.cuda.is_available():
+        device = torch.device('cpu')
+    else:
+        device = torch.device(f'cuda:{ARG.gpu}')
     logging.info(f'Device: {device}')
+
     train_test(train_set, val_set, test_set, ARG, dist_edges, dist_vec, device)
