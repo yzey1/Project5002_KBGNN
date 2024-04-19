@@ -123,5 +123,5 @@ class GeoGraph(nn.Module):
         aggr_feat = torch.mean(self_attn_feat, dim=1)
 
         # proj_head(graph_enc) looks like e_g,u, however it does not apply multi-head self-attention
-        # return self.proj_head(graph_enc), pred_logits, tar_embed
+        # return self.proj_head(graph_enc), tar_embed
         return aggr_feat, tar_embed

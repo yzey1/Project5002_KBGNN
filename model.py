@@ -9,6 +9,9 @@ class EmbeddingLayer(nn.Module):
         n_poi (int): Number of POI.
         embed_dim (int): Embedding dimension.
 
+    Input:
+        torch.Tensor: Index of POI.
+
     Output:
         torch.Tensor: Embedding vector of POI.
     '''
@@ -23,6 +26,20 @@ class EmbeddingLayer(nn.Module):
 
 
 class MLP(nn.Module):
+    '''MLP for predicting the probability of visiting a POI.
+
+    Args:
+        embed_dim (int): Embedding dimension.
+
+    Input:
+        torch.Tensor: Geographical embedding.
+        torch.Tensor: Sequential embedding.
+        torch.Tensor: Target geographical representation.
+
+    Output:
+        torch.Tensor: Logits of the prediction.
+    '''
+
     def __init__(self, embed_dim):
         super(MLP, self).__init__()
         self.embed_dim = embed_dim
