@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
-from GeoGraph import GeoGraph
-from SeqGraph import SeqGraph
+
 
 class EmbeddingLayer(nn.Module):
     '''Embedding layer for POI. 
@@ -21,6 +20,7 @@ class EmbeddingLayer(nn.Module):
 
     def forward(self, idx):
         return self.embeds(idx)
+
 
 class MLP(nn.Module):
     def __init__(self, embed_dim):
