@@ -108,4 +108,4 @@ class SeqGraph(nn.Module):
 
     def forward(self, data, poi_embeds):
         sess_feat = self.rwnn(data, poi_embeds)
-        return self.proj_head(sess_feat), None
+        return self.proj_head(sess_feat)
