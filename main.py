@@ -187,7 +187,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
             Seq_encoder, Geo_encoder, Poi_embeds, MLP, va_set, arg, device)
         logging.info('')
         logging.info(
-            f'''Epoch: {epoch + 1} / {arg.epoch}, validation AUC: {auc}, validation logloss: {logloss}''')
+            f'Epoch: {epoch + 1} / {arg.epoch}, validation AUC: {auc}, validation logloss: {logloss}')
 
         # update best epoch
         if auc > best_auc:
