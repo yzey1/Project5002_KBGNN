@@ -3,7 +3,6 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
-from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import degree
 
 
