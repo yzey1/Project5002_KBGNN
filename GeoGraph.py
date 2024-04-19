@@ -6,21 +6,6 @@ from torch.nn.utils.rnn import pad_sequence
 from torch_geometric.utils import degree
 
 
-def sequence_mask(lengths, max_len=None):
-    # generate a sequence mask, marks the positions of valid elements
-    lengths_shape = lengths.shape  # torch.size() is a tuple
-    lengths = lengths.reshape(-1)
-
-    batch_size = lengths.numel()
-    max_len = max_len or int(lengths.max())
-    lengths_shape += (max_len, )
-
-    return (torch.arange(0, max_len, device=lengths.device)
-            .type_as(lengths)
-            .unsqueeze(0).expand(batch_size, max_len)
-            .lt(lengths.unsqueeze(1))).reshape(lengths_shape)
-
-
 class SelfAttn(nn.Module):
     def __init__(self, embed_dim, num_heads):
         super(SelfAttn, self).__init__()
