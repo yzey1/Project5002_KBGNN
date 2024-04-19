@@ -225,10 +225,8 @@ if __name__ == '__main__':
 
     logging.info(f'Arguments: {ARG}')
 
-    with open(f'./processed_data/{ARG.data}/raw/val.pkl', 'rb') as f:
-        tmp = pickle.load(f)
+    with open(f'./processed_data/{ARG.data}/raw/info.pkl', 'rb') as f:
         n_user, n_poi = pickle.load(f)
-        del tmp
 
     train_set = MyDataset(f'./processed_data/{ARG.data}', set='train')
     train_set = train_set[:int(len(train_set) * ARG.train_percentage)]

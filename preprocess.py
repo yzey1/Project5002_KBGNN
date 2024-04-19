@@ -115,12 +115,11 @@ print(f'#Test: {len(test_set)}')
 # save the datasets
 with open(dst_path+'train.pkl', 'wb') as f:
     pkl.dump(train_set, f, pkl.HIGHEST_PROTOCOL)
-    pkl.dump((num_user, num_poi), f, pkl.HIGHEST_PROTOCOL)
 with open(dst_path+'test.pkl', 'wb') as f:
     pkl.dump(test_set, f, pkl.HIGHEST_PROTOCOL)
-    pkl.dump((num_user, num_poi), f, pkl.HIGHEST_PROTOCOL)
 with open(dst_path+'val.pkl', 'wb') as f:
     pkl.dump(val_set, f, pkl.HIGHEST_PROTOCOL)
+with open(dst_path+'info.pkl', 'wb') as f:
     pkl.dump((num_user, num_poi), f, pkl.HIGHEST_PROTOCOL)
 
 print('Finish generating dataset.')
