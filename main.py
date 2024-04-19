@@ -24,7 +24,7 @@ ARG.add_argument('--seed', type=int, default=98765,
 ARG.add_argument('--batch', type=int, default=128,
                  help='Training batch size.')
 ARG.add_argument('--data', type=str, default='nyc',
-                 help='Training dataset.')
+                 help='Training dataset. nyc or tky.')
 ARG.add_argument('--gpu', type=int, default=None,
                  help='Denote training device. GPU is denoted by the index (e.g., 0, 1).')
 ARG.add_argument('--patience', type=int, default=10,
@@ -39,8 +39,6 @@ ARG.add_argument('--hid_graph_num', type=int, default=16,
                  help='Num of hidden graphs.')
 ARG.add_argument('--hid_graph_size', type=int, default=10,
                  help='Size of hidden graphs')
-ARG.add_argument('--weight_decay', type=float, default=5e-4,
-                 help='Weight decay rate')
 ARG.add_argument('--lr', type=float, default=1e-3,
                  help='Learning rate.')
 ARG.add_argument('--con_weight', type=float, default=0.01,
@@ -50,7 +48,7 @@ ARG.add_argument('--compress_memory_size', type=int, default=12800,
 ARG.add_argument('--compress_t', type=float, default=0.01,
                  help='Softmax temperature')
 ARG.add_argument('--train_percentage', type=float, default=1,
-                 help='Percentage of training set')
+                 help='Percentage used of training set')
 
 ARG = ARG.parse_args()
 
@@ -145,7 +143,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
         {'params': Seq_encoder.parameters()},
         {'params': Geo_encoder.parameters()},
         {'params': Poi_embeds.parameters()},
-        {'params': MLP.parameters()}], lr=arg.lr)  # , weight_decay=arg.weight_decay)
+        {'params': MLP.parameters()}], lr=arg.lr)
 
     batch_num = math.ceil(len(tr_set) / arg.batch)
     train_loader = DataLoader(tr_set, arg.batch, shuffle=True)
