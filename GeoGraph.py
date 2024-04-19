@@ -37,11 +37,12 @@ class Geo_GCN(nn.Module):
         self.W(side_embed): the computed message
     """
     # initialize the linear transformation
+
     def __init__(self, in_channels, out_channels, device):
         super(Geo_GCN, self).__init__()
         self.W = nn.Linear(in_channels, out_channels).to(device)
         self.init_weights()
-        
+
     # initialize the weight matrices
     def init_weights(self):
         nn.init.xavier_uniform_(self.W.weight)
@@ -69,10 +70,11 @@ class GeoGraph(nn.Module):
         n_poi: number of POIs
         embed_dim: dimension of embedding vectors
         gcn_num: number of GCN layers
-        
+
     """
     # initialization
-    def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, device):
+
+    def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, num_heads, device):
         super(GeoGraph, self).__init__()
         self.n_user = n_user
         self.n_poi = n_poi
@@ -83,9 +85,11 @@ class GeoGraph(nn.Module):
         # construct distance edges tensor
         # add reverse edge and self-loop edge to update the geograph
         self.dist_edges = dist_edges.to(device)
-        loop_index = torch.arange(0, n_poi).unsqueeze(0).repeat(2, 1).to(device)
-        self.dist_edges = torch.cat((self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1)
-        
+        loop_index = torch.arange(0, n_poi).unsqueeze(
+            0).repeat(2, 1).to(device)
+        self.dist_edges = torch.cat(
+            (self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1)
+
         # update distance vector tensor to match with dist_edges
         dist_vec = np.concatenate((dist_vec, dist_vec, np.zeros(self.n_poi)))
         self.dist_vec = torch.Tensor(dist_vec).to(device)
@@ -104,7 +108,7 @@ class GeoGraph(nn.Module):
 
         self.init_weights()
 
-        self.selfAttn = SelfAttn(self.embed_dim, 1).to(device)
+        self.selfAttn = SelfAttn(self.embed_dim, num_heads).to(device)
 
     # Initialize weights in the model
     def init_weights(self):
@@ -136,7 +140,7 @@ class GeoGraph(nn.Module):
             enc = F.normalize(enc, dim=-1)
 
         # embeddings of the target nodes
-        tar_embed = enc[data.poi]  
+        tar_embed = enc[data.poi]
         # embeddings of other nodes in the graph
         geo_feat = enc[data.x.squeeze()]
 

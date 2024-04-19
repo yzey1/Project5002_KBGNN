@@ -50,6 +50,8 @@ ARG.add_argument('--compress_t', type=float, default=0.01,
                  help='Softmax temperature')
 ARG.add_argument('--train_percentage', type=float, default=1,
                  help='Percentage used of training set')
+ARG.add_argument('--num_heads', type=int, default=1,
+                 help='Num of heads in multi-head attention')
 
 ARG = ARG.parse_args()
 
@@ -90,13 +92,11 @@ def set_seed(seed):
     torch.cuda.manual_seed(seed)
 
 
-
-
 def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     Seq_encoder = SeqGraph(n_user, n_poi, arg.max_step, arg.embed,
                            arg.hid_graph_num, arg.hid_graph_size, device).to(device)
     Geo_encoder = GeoGraph(n_user, n_poi, arg.gcn_num,
-                           arg.embed, dist_edges, dist_vec, device).to(device)
+                           arg.embed, dist_edges, dist_vec, arg.num_heads, device).to(device)
     Poi_embeds = EmbeddingLayer(n_poi, arg.embed).to(device)
     Predictor = MLP(arg.embed).to(device)
     Sim_criterion = consistencyLoss(
