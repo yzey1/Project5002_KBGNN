@@ -67,6 +67,8 @@ print('Finish reading data.')
 
 print('Generating dataset...')
 
+sum_seqlen=0
+
 # the coordinates of each POI
 coords = {poi: None for poi in range(num_poi)}
 for poi, item in data.groupby('poi'):
@@ -79,6 +81,11 @@ for uid in range(num_user):
     # the sequence of POIs that the user visits
     true_seq = data[data['uid'] == uid]['poi'].tolist()
     true_seq_set = set(true_seq)
+
+    # calculate the sequence length 
+    seqlen=len(true_seq)
+    # calculate the sum of sequence length, this is also the interactions in this sequence
+    sum_seqlen+=seqlen    
 
     # take only the POIs that the user never visits
     false_seq = []
@@ -99,6 +106,10 @@ for uid in range(num_user):
     eval_set.append(
         (uid, false_seq[-1], true_seq[:-1], coords[false_seq[-1]], 0))
 
+print(f'avgSeqLen = {sum_seqlen/num_user}')
+print(f'interactions = {sum_seqlen}')       
+    
+    
 # random shuffle the training and evaluation set
 random.shuffle(train_set)
 random.shuffle(eval_set)
