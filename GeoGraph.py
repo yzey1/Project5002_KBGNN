@@ -64,26 +64,13 @@ class Geo_GCN(nn.Module):
 
 # GeoGraph Neural Network
 class GeoGraph(nn.Module):
-    """
-    Args:
-        n_user: number of users
-        n_poi: number of POIs
-        embed_dim: dimension of embedding vectors
-        gcn_num: number of GCN layers
-
-    """
-    # initialization
-
-    def __init__(self, n_user, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, num_heads, device):
+    def __init__(self, n_poi, gcn_num, embed_dim, dist_edges, dist_vec, num_heads, device):
         super(GeoGraph, self).__init__()
-        self.n_user = n_user
         self.n_poi = n_poi
         self.embed_dim = embed_dim
         self.gcn_num = gcn_num
         self.device = device
 
-        # construct distance edges tensor
-        # add reverse edge and self-loop edge to update the geograph
         self.dist_edges = dist_edges.to(device)
         loop_index = torch.arange(0, n_poi).unsqueeze(
             0).repeat(2, 1).to(device)

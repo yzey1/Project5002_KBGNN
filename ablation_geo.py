@@ -86,7 +86,7 @@ def set_seed(seed):
 
 
 def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
-    Geo_encoder = GeoGraph(n_user, n_poi, arg.gcn_num,
+    Geo_encoder = GeoGraph(n_poi, arg.gcn_num,
                            arg.embed, dist_edges, dist_vec, device).to(device)
     Poi_embeds = EmbeddingLayer(n_poi, arg.embed).to(device)
     Predictor = MLP2(arg.embed).to(device)
