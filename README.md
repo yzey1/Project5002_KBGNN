@@ -50,3 +50,5 @@ To check the available hyperparameters, run:
 ```bash
 python main.py --help
 ```
+
+Replace `main.py` with `ablation_geo.py` or `ablation_seq.py` to run the ablation study on the geographical and sequential components, respectively.
