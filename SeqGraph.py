@@ -100,12 +100,6 @@ class SeqGraph(nn.Module):
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
 
-    def split_mean(self, section_feat, sections):
-        section_embed = torch.split(section_feat, sections)
-        mean_embeds = [torch.mean(embeddings, dim=0)
-                       for embeddings in section_embed]
-        return torch.stack(mean_embeds)
-
     def forward(self, data, poi_embeds):
         sess_feat = self.rwnn(data, poi_embeds)
         return self.proj_head(sess_feat)
