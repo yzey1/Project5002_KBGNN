@@ -16,9 +16,9 @@ from model import EmbeddingLayer, MLP2
 
 
 ARG = argparse.ArgumentParser()
-ARG.add_argument('--epoch', type=int, default=140,
+ARG.add_argument('--epoch', type=int, default=100,
                  help='Max epoch num.')
-ARG.add_argument('--seed', type=int, default=98765,
+ARG.add_argument('--seed', type=int, default=42,
                  help='Random seed.')
 ARG.add_argument('--batch', type=int, default=128,
                  help='Training batch size.')
