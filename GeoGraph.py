@@ -43,9 +43,9 @@ class SelfAttn(nn.Module):
         return attn_output
 
 
-class Geo_GCN(nn.Module):
+class GraphConvolution(nn.Module):
     """
-    Graph Convolutional Network (GCN) module for processing geographical information in a graph.
+    A single GCN layer
 
     Args:
         in_channels (int): Number of input channels.
@@ -53,43 +53,35 @@ class Geo_GCN(nn.Module):
         device (torch.device): Device on which the module will be run.
 
     Attributes:
-        W (nn.Linear): Linear transformation weight matrix.
+        W (nn.Linear): learnable weight matrix for message passing.
     """
 
     def __init__(self, in_channels, out_channels, device):
-        super(Geo_GCN, self).__init__()
-        self.W = nn.Linear(in_channels, out_channels).to(device)
-        self.init_weights()
+        super(GraphConvolution, self).__init__()
+        self.linear = nn.Linear(in_channels, out_channels).to(device)
 
-    def init_weights(self):
+    def forward(self, poi_rep, edge_index, dist_vec):
         """
-        Initialize the weight matrices for each GCN layer.
-        """
-        nn.init.xavier_uniform_(self.W.weight)
-
-    def forward(self, x, edge_index, dist_vec):
-        """
-        Forward pass of the GCN module.
-
         Args:
-            x (torch.Tensor): Input tensor of shape (num_nodes, in_channels).
+            poi_nec (torch.Tensor): Input tensor of shape (num_nodes, dimension of embeddings).
             edge_index (torch.Tensor): Edge index tensor of shape (2, num_edges).
             dist_vec (torch.Tensor): Distance vector tensor of shape (num_edges,).
 
         Returns:
             torch.Tensor: Output tensor of shape (num_nodes, out_channels).
         """
-        row, col = edge_index
-        deg = degree(col, x.size(0), dtype=x.dtype)
-        deg_inv_sqrt = deg.pow(-0.5)
-        deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
-        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
-
-        dist_weight = torch.exp(-(dist_vec ** 2))
-        dist_adj = torch.sparse_coo_tensor(edge_index, dist_weight * norm)
-        side_embed = torch.sparse.mm(dist_adj, x)
         
-        return self.W(side_embed)
+        nodes1, nodes2 = edge_index
+        node_degree = degree(nodes1, poi_rep.size(0), dtype=poi_rep.dtype)
+        norm_weight = torch.pow(node_degree[nodes1]*node_degree[nodes2], -0.5)
+        dist_weight = torch.exp(-(dist_vec ** 2))
+        
+        dist_adj = torch.sparse_coo_tensor(edge_index, norm_weight * dist_weight)
+        x = torch.sparse.mm(dist_adj, poi_rep)
+        
+        message = self.linear(x)
+        
+        return message
 
 
 class GeoGraph(nn.Module):
@@ -122,31 +114,31 @@ class GeoGraph(nn.Module):
         self.embed_dim = embed_dim
         self.n_gcn_layers = n_gcn_layers
         self.device = device
-
+        
         self.dist_edges = dist_edges.to(device)
         loop_index = torch.arange(0, n_poi).unsqueeze(0).repeat(2, 1).to(device)
-        self.dist_edges = torch.cat(
-            (self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1)
-
+        self.dist_edges = torch.cat((self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1)
+        
         dist_vec = np.concatenate((dist_vec, dist_vec, np.zeros(self.n_poi)))
         self.dist_vec = torch.Tensor(dist_vec).to(device)
 
-        # initialize GCN module, selfAttn, weights
+        # GCN layers
         self.gcn = nn.ModuleList()
         for _ in range(self.n_gcn_layers):
-            self.gcn.append(Geo_GCN(embed_dim, embed_dim, device).to(device))
+            self.gcn.append(GraphConvolution(embed_dim, embed_dim, device).to(device))
+        # self-attention layer
         self.selfAttn = SelfAttn(self.embed_dim, n_heads).to(device)
         
-        self.init_weights()
+        self._init_weights()
 
-    def init_weights(self):
+    def _init_weights(self):
         """
         Initialize the weights in the model.
         """
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
-            elif isinstance(m, nn.GRU):
+            elif isinstance(m, nn.MultiheadAttention):
                 for name, param in m.named_parameters():
                     if 'weight' in name:
                         nn.init.xavier_normal_(param.data)
@@ -172,19 +164,18 @@ class GeoGraph(nn.Module):
             enc = self.gcn[i](enc, self.dist_edges, self.dist_vec)
             enc = F.leaky_relu(enc)
             enc = F.normalize(enc, dim=-1)
-            
-        # get sequence lengths
-        seq_lens = torch.bincount(data.batch)
-        sections = tuple(seq_lens.cpu().numpy())
         
-        # target node embeddings
-        tar_embed = enc[data.poi]
-        # source node embeddings
-        geo_feat = enc[data.x.squeeze()]
-
+        # embeddings for each poi
+        poi_embed = enc[data.poi]
+        
+        # get sequence lengths
+        _, seq_len = torch.unique(data.batch, return_counts=True)
+        sections = tuple(seq_len.cpu().numpy())
+        
         # apply multihead self-attention
-        self_attn_feat = self.selfAttn(geo_feat, sections)
+        poi_embed_in_seq = enc[data.x.squeeze()] # embeddings for poi in the sequence
+        self_attn_feat = self.selfAttn(poi_embed_in_seq, sections)
         # aggregate self-attention features to obtain semantic representation e_g,u
         aggr_feat = torch.mean(self_attn_feat, dim=1)
 
-        return aggr_feat, tar_embed
+        return aggr_feat, poi_embed
