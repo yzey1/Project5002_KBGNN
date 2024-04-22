@@ -7,15 +7,36 @@ from torch_geometric.utils import degree
 
 
 class SelfAttn(nn.Module):
+    """
+    Self-Attention module that applies multi-head attention mechanism on input embeddings.
+
+    Args:
+        embed_dim (int): The dimension of the input embeddings.
+        n_heads (int): The number of attention heads to use.
+
+    Attributes:
+        multihead_attn (nn.MultiheadAttention): The multi-head attention module.
+
+    """
+
     def __init__(self, embed_dim, n_heads):
         super(SelfAttn, self).__init__()
-        self.multihead_attn = nn.MultiheadAttention(
-            embed_dim, n_heads, batch_first=True)
+        self.multihead_attn = nn.MultiheadAttention(embed_dim, n_heads, batch_first=True)
 
     def forward(self, sess_embed, sections):
+        """
+        Forward pass of the SelfAttn module.
+
+        Args:
+            sess_embed (torch.Tensor): The input session embeddings.
+            sections (List[int]): A list of section lengths for each session.
+
+        Returns:
+            torch.Tensor: The output attention embeddings.
+
+        """
         v_i = torch.split(sess_embed, sections)
         v_i_pad = pad_sequence(v_i, batch_first=True, padding_value=0.)
-        # v_i = torch.stack(v_i)
 
         attn_output, _ = self.multihead_attn(v_i_pad, v_i_pad, v_i_pad)
 
