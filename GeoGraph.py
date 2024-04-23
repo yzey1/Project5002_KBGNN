@@ -49,15 +49,14 @@ class GraphLayer(nn.Module):
 
     Args:
         embed_dim (int): Dimension of the embeddings.
-        device (torch.device): Device on which the module will be run.
 
     Attributes:
         W (nn.Linear): learnable weight matrix for message passing.
     """
 
-    def __init__(self, embed_dim, device):
+    def __init__(self, embed_dim):
         super(GraphLayer, self).__init__()
-        self.linear = nn.Linear(embed_dim, embed_dim).to(device)
+        self.linear = nn.Linear(embed_dim, embed_dim)
 
     def forward(self, poi_rep, edge_index, dist_vec):
         """
@@ -120,7 +119,7 @@ class GeoGraph(nn.Module):
         # GCN layers
         self.gcn = nn.ModuleList()
         for _ in range(self.n_layers):
-            self.gcn.append(GraphLayer(embed_dim, device).to(device))
+            self.gcn.append(GraphLayer(embed_dim).to(device))
         # self-attention layer
         self.selfAttn = SelfAttn(embed_dim, n_heads).to(device)
         
