@@ -13,33 +13,12 @@ class SeqGraph(MessagePassing):
         hidden_dim (int): The dimensionality of the hidden features.
         hidden_graph_num (int): The number of hidden graphs.
         hidden_graph_size (int): The size of each hidden graph.
-        device (torch.device): The device on which the model will be run.
-
-    Attributes:
-        max_step (int): The maximum number of propagation steps.
-        device (torch.device): The device on which the model will be run.
-        hidden_graph_num (int): The number of hidden graphs.
-        hidden_graph_size (int): The size of each hidden graph.
-        fc (torch.nn.Linear): The fully connected layer.
-        hidden_adj (torch.nn.Parameter): The parameter for hidden adjacency matrix.
-        hidden_feat (torch.nn.Parameter): The parameter for hidden features.
-        bn (torch.nn.BatchNorm1d): The batch normalization layer.
-        fc1 (torch.nn.Linear): The first fully connected layer.
-        fc2 (torch.nn.Linear): The second fully connected layer.
-        dropout (torch.nn.Dropout): The dropout layer.
-        relu (torch.nn.LeakyReLU): The LeakyReLU activation function.
-        sigmoid (torch.nn.Sigmoid): The sigmoid activation function.
-
-    Methods:
-        _init_weights(): Initializes the weights of the model.
-        forward(data, poi_embeds): Performs forward pass through the model.
 
     """
 
-    def __init__(self, max_step, hidden_dim, hidden_graph_num, hidden_graph_size, device):
+    def __init__(self, max_step, hidden_dim, hidden_graph_num, hidden_graph_size):
         super(SeqGraph, self).__init__()
         self.max_step = max_step
-        self.device = device
         self.hidden_graph_num = hidden_graph_num
         self.hidden_graph_size = hidden_graph_size
 
@@ -67,7 +46,7 @@ class SeqGraph(MessagePassing):
     def forward(self, data, poi_embeds):
         
         # adjacency matrix for hidden graphs
-        adj_hidden_norm = torch.zeros(self.hidden_graph_num, self.hidden_graph_size, self.hidden_graph_size).to(self.device)
+        adj_hidden_norm = torch.zeros(self.hidden_graph_num, self.hidden_graph_size, self.hidden_graph_size)
         idx = torch.triu_indices(self.hidden_graph_size, self.hidden_graph_size, 1)
         adj_hidden_norm[:, idx[0], idx[1]] = self.relu(self.hidden_adj)
         adj_hidden_norm = adj_hidden_norm + torch.transpose(adj_hidden_norm, 1, 2)
@@ -88,7 +67,7 @@ class SeqGraph(MessagePassing):
         for i in range(self.max_step):
             if i == 0:
                 # initialize the hidden graph features
-                eye = torch.eye(self.hidden_graph_size, device=self.device)
+                eye = torch.eye(self.hidden_graph_size)
                 eye = eye.repeat(self.hidden_graph_num, 1, 1)
                 o = torch.einsum("abc,acd->abd", (eye, z))
                 t = torch.einsum("abc,dc->abd", (o, x))
@@ -104,7 +83,7 @@ class SeqGraph(MessagePassing):
             
             # sum the features and transpose
             t = torch.zeros(t.size(0), t.size(1), n_graphs,
-                            device=self.device).index_add_(2, graph_indicator, t)
+                            ).index_add_(2, graph_indicator, t)
             t = torch.sum(t, dim=1)
             t = torch.transpose(t, 0, 1)
             

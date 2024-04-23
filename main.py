@@ -94,9 +94,9 @@ def set_seed(seed):
 
 def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
     Seq_encoder = SeqGraph(arg.max_step, arg.embed,
-                           arg.hid_graph_num, arg.hid_graph_size, device).to(device)
+                           arg.hid_graph_num, arg.hid_graph_size).to(device)
     Geo_encoder = GeoGraph(n_poi, arg.gcn_num,
-                           arg.embed, dist_edges, dist_vec, arg.num_heads, device).to(device)
+                           arg.embed, dist_edges, dist_vec, arg.num_heads).to(device)
     Poi_embeds = EmbeddingLayer(n_poi, arg.embed).to(device)
     Predictor = MLP(arg.embed).to(device)
     Sim_criterion = consistencyLoss(
