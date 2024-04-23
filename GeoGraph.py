@@ -72,7 +72,7 @@ class GraphLayer(nn.Module):
         
         nodes1, nodes2 = edge_index
         node_degree = degree(nodes1, poi_rep.size(0), dtype=poi_rep.dtype)
-        norm_weight = torch.pow(node_degree[nodes1]*node_degree[nodes2], -0.5)
+        norm_weight = torch.pow(node_degree[nodes1] * node_degree[nodes2], -0.5)
         dist_weight = torch.exp(-(dist_vec ** 2))
         
         weight_mat = torch.sparse_coo_tensor(edge_index, norm_weight * dist_weight)
