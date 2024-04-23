@@ -139,6 +139,7 @@ class GeoGraph(nn.Module):
             aggr_feat: Aggregated features obtained from self-attention mechanism.
             tar_embed: Embeddings of the target nodes.
         """
+        
         # the original embeddings of the POIs
         enc = poi_embeds.embeds.weight
         # apply GCN layers
