@@ -150,7 +150,7 @@ class GeoGraph(nn.Module):
             enc = self.mpnn[i](enc, self.dist_edges, self.dist_vec)
         
         # geographical encoding for target poi
-        poi_embed = enc[data.poi]
+        tar_embed = enc[data.poi]
         
         # get sequence lengths
         _, seq_len = torch.unique(data.batch, return_counts=True)
@@ -162,4 +162,4 @@ class GeoGraph(nn.Module):
         # aggregate self-attention features to obtain semantic representation e_g,u
         aggr_feat = torch.mean(self_attn_feat, dim=1)
 
-        return aggr_feat, poi_embed
+        return aggr_feat, tar_embed
