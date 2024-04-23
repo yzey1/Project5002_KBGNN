@@ -18,7 +18,6 @@ class SeqGraph(MessagePassing):
     Attributes:
         max_step (int): The maximum number of propagation steps.
         device (torch.device): The device on which the model will be run.
-        hid_dim (int): The dimensionality of the hidden features.
         hidden_graph_num (int): The number of hidden graphs.
         hidden_graph_size (int): The size of each hidden graph.
         fc (torch.nn.Linear): The fully connected layer.
@@ -41,7 +40,6 @@ class SeqGraph(MessagePassing):
         super(SeqGraph, self).__init__()
         self.max_step = max_step
         self.device = device
-        self.hid_dim = hidden_dim
         self.hidden_graph_num = hidden_graph_num
         self.hidden_graph_size = hidden_graph_size
 
