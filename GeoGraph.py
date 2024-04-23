@@ -14,9 +14,6 @@ class SelfAttn(nn.Module):
         embed_dim (int): The dimension of the input embeddings.
         n_heads (int): The number of attention heads to use.
 
-    Attributes:
-        multihead_attn (nn.MultiheadAttention): The multi-head attention module.
-
     """
 
     def __init__(self, embed_dim, n_heads):
