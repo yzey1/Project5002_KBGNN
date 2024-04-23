@@ -74,9 +74,8 @@ class RW_NN(MessagePassing):
 
 
 class SeqGraph(nn.Module):
-    def __init__(self, n_user, n_poi, max_step, embed_dim, hid_graph_num, hid_graph_size, device):
+    def __init__(self, n_poi, max_step, embed_dim, hid_graph_num, hid_graph_size, device):
         super(SeqGraph, self).__init__()
-        self.n_user, self.n_poi = n_user, n_poi
         self.embed_dim = embed_dim
         self.max_step = max_step
         self.encoder = []
