@@ -12,17 +12,10 @@ class RW_NN(MessagePassing):
         self.hid_graph_num = hid_graph_num
         self.hid_graph_size = hid_graph_size
 
-        self.__init_weights(hid_dim, hid_graph_num, hid_graph_size)
-
-    def __init_weights(self, hid_dim, hid_graph_num, hid_graph_size):
         self.fc = nn.Linear(hid_dim, hid_dim)
-        self.hid_adj = nn.Parameter(
-            torch.empty(hid_graph_num, (hid_graph_size *
-                        (hid_graph_size - 1)) // 2)
-        )
-        self.hid_feat = nn.Parameter(torch.empty(
-            hid_graph_num, hid_graph_size, hid_dim))
-
+        self.hid_adj = nn.Parameter(torch.empty(hid_graph_num, (hid_graph_size *(hid_graph_size - 1)) // 2))
+        self.hid_feat = nn.Parameter(torch.empty(hid_graph_num, hid_graph_size, hid_dim))
+        
         self.bn = nn.BatchNorm1d(hid_graph_num * self.max_step)
         self.mlp = torch.nn.Linear(hid_graph_num * self.max_step, hid_dim)
 
@@ -30,6 +23,9 @@ class RW_NN(MessagePassing):
         self.relu = nn.LeakyReLU()
         self.sigmoid = nn.Sigmoid()
 
+        self._init_weights(hid_dim, hid_graph_num, hid_graph_size)
+
+    def _init_weights(self):
         nn.init.xavier_normal_(self.hid_adj)
         nn.init.xavier_normal_(self.hid_feat)
         for m in self.modules():
@@ -39,7 +35,7 @@ class RW_NN(MessagePassing):
     def forward(self, data, poi_embeds):
         poi_feat, poi_adj = poi_embeds(data.x.squeeze()), data.edge_index
         graph_indicator = data.batch
-        unique, counts = torch.unique(graph_indicator, return_counts=True)
+        unique = torch.unique(graph_indicator)
         n_graphs = unique.size(0)
 
         adj_hidden_norm = torch.zeros(
