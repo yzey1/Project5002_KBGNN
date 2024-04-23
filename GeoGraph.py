@@ -115,6 +115,7 @@ class GeoGraph(nn.Module):
         self.n_gcn_layers = n_gcn_layers
         self.device = device
         
+        # add the reverse direction and self-loop to the distance edges
         self.dist_edges = dist_edges.to(device)
         loop_index = torch.arange(0, n_poi).unsqueeze(0).repeat(2, 1).to(device)
         self.dist_edges = torch.cat((self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1)
@@ -157,7 +158,7 @@ class GeoGraph(nn.Module):
             aggr_feat: Aggregated features obtained from self-attention mechanism.
             tar_embed: Embeddings of the target nodes.
         """
-
+        # the original embeddings of the POIs
         enc = poi_embeds.embeds.weight
         # apply GCN layers
         for i in range(self.n_gcn_layers):
@@ -165,7 +166,7 @@ class GeoGraph(nn.Module):
             enc = F.leaky_relu(enc)
             enc = F.normalize(enc, dim=-1)
         
-        # embeddings for each poi
+        # geographical encoding for target poi
         poi_embed = enc[data.poi]
         
         # get sequence lengths
