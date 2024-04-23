@@ -17,7 +17,8 @@ class SeqGraph(MessagePassing):
         self.hidden_feat = nn.Parameter(torch.empty(hidden_graph_num, hidden_graph_size, hidden_dim))
         
         self.bn = nn.BatchNorm1d(hidden_graph_num * self.max_step)
-        self.mlp = torch.nn.Linear(hidden_graph_num * self.max_step, hidden_dim)
+        self.fc1 = torch.nn.Linear(hidden_graph_num * self.max_step, hidden_dim)
+        self.fc2 = torch.nn.Linear(hidden_dim, hidden_dim)
 
         self.dropout = nn.Dropout()
         self.relu = nn.LeakyReLU()
@@ -67,6 +68,8 @@ class SeqGraph(MessagePassing):
             out.append(t)
 
         out = torch.cat(out, dim=1)
-        out = self.relu(self.mlp(out))
+        out = self.bn(out)
+        out = self.relu(self.fc1(out))
         out = self.dropout(out)
+        out = self.fc2(out)
         return out
