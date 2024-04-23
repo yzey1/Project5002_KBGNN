@@ -48,17 +48,16 @@ class GraphLayer(nn.Module):
     A single message passing nueral network layer
 
     Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
+        embed_dim (int): Dimension of the embeddings.
         device (torch.device): Device on which the module will be run.
 
     Attributes:
         W (nn.Linear): learnable weight matrix for message passing.
     """
 
-    def __init__(self, in_channels, out_channels, device):
+    def __init__(self, embed_dim, device):
         super(GraphLayer, self).__init__()
-        self.linear = nn.Linear(in_channels, out_channels).to(device)
+        self.linear = nn.Linear(embed_dim, embed_dim).to(device)
 
     def forward(self, poi_rep, edge_index, dist_vec):
         """
@@ -76,12 +75,10 @@ class GraphLayer(nn.Module):
         norm_weight = torch.pow(node_degree[nodes1]*node_degree[nodes2], -0.5)
         dist_weight = torch.exp(-(dist_vec ** 2))
         
-        dist_adj = torch.sparse_coo_tensor(edge_index, norm_weight * dist_weight)
-        x = torch.sparse.mm(dist_adj, poi_rep)
-        
-        message = self.linear(x)
-        
-        return message
+        weight_mat = torch.sparse_coo_tensor(edge_index, norm_weight * dist_weight)
+
+        poi_rep = self.linear(poi_rep)
+        return torch.sparse.mm(weight_mat, poi_rep)
 
 
 class GeoGraph(nn.Module):
@@ -110,25 +107,22 @@ class GeoGraph(nn.Module):
 
     def __init__(self, n_poi, n_gcn_layers, embed_dim, dist_edges, dist_vec, n_heads, device):
         super(GeoGraph, self).__init__()
-        self.n_poi = n_poi
-        self.embed_dim = embed_dim
         self.n_gcn_layers = n_gcn_layers
-        self.device = device
         
         # add the reverse direction and self-loop to the distance edges
         self.dist_edges = dist_edges.to(device)
         loop_index = torch.arange(0, n_poi).unsqueeze(0).repeat(2, 1).to(device)
         self.dist_edges = torch.cat((self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1)
         
-        dist_vec = np.concatenate((dist_vec, dist_vec, np.zeros(self.n_poi)))
+        dist_vec = np.concatenate((dist_vec, dist_vec, np.zeros(n_poi)))
         self.dist_vec = torch.Tensor(dist_vec).to(device)
 
         # GCN layers
         self.gcn = nn.ModuleList()
         for _ in range(self.n_gcn_layers):
-            self.gcn.append(GraphLayer(embed_dim, embed_dim, device).to(device))
+            self.gcn.append(GraphLayer(embed_dim, device).to(device))
         # self-attention layer
-        self.selfAttn = SelfAttn(self.embed_dim, n_heads).to(device)
+        self.selfAttn = SelfAttn(embed_dim, n_heads).to(device)
         
         self._init_weights()
 
