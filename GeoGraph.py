@@ -107,10 +107,11 @@ class GeoGraph(nn.Module):
         dist_vec = np.concatenate((dist_vec, dist_vec, np.zeros(n_poi)))
         self.dist_vec = torch.Tensor(dist_vec)
 
-        # GCN layers
-        self.gcn = nn.ModuleList()
+        # message passing neural network layers
+        self.mpnn = nn.ModuleList()
         for _ in range(self.n_layers):
-            self.gcn.append(GraphLayer(embed_dim))
+            self.mpnn.append(GraphLayer(embed_dim))
+
         # self-attention layer
         self.selfAttn = SelfAttn(embed_dim, n_heads)
         
@@ -146,7 +147,7 @@ class GeoGraph(nn.Module):
         enc = poi_embeds.embeds.weight
         # apply GCN layers
         for i in range(self.n_layers):
-            enc = self.gcn[i](enc, self.dist_edges, self.dist_vec)
+            enc = self.mpnn[i](enc, self.dist_edges, self.dist_vec)
         
         # geographical encoding for target poi
         poi_embed = enc[data.poi]
