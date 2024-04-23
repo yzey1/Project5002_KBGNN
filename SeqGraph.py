@@ -4,30 +4,30 @@ from torch_geometric.nn import MessagePassing
 
 
 class RW_NN(MessagePassing):
-    def __init__(self, max_step, hid_dim, hid_graph_num, hid_graph_size, device):
+    def __init__(self, max_step, hidden_dim, hidden_graph_num, hidden_graph_size, device):
         super(RW_NN, self).__init__()
         self.max_step = max_step
         self.device = device
-        self.hid_dim = hid_dim
-        self.hid_graph_num = hid_graph_num
-        self.hid_graph_size = hid_graph_size
+        self.hid_dim = hidden_dim
+        self.hidden_graph_num = hidden_graph_num
+        self.hidden_graph_size = hidden_graph_size
 
-        self.fc = nn.Linear(hid_dim, hid_dim)
-        self.hid_adj = nn.Parameter(torch.empty(hid_graph_num, (hid_graph_size *(hid_graph_size - 1)) // 2))
-        self.hid_feat = nn.Parameter(torch.empty(hid_graph_num, hid_graph_size, hid_dim))
+        self.fc = nn.Linear(hidden_dim, hidden_dim)
+        self.hidden_adj = nn.Parameter(torch.empty(hidden_graph_num, (hidden_graph_size *(hidden_graph_size - 1)) // 2))
+        self.hidden_feat = nn.Parameter(torch.empty(hidden_graph_num, hidden_graph_size, hidden_dim))
         
-        self.bn = nn.BatchNorm1d(hid_graph_num * self.max_step)
-        self.mlp = torch.nn.Linear(hid_graph_num * self.max_step, hid_dim)
+        self.bn = nn.BatchNorm1d(hidden_graph_num * self.max_step)
+        self.mlp = torch.nn.Linear(hidden_graph_num * self.max_step, hidden_dim)
 
         self.dropout = nn.Dropout()
         self.relu = nn.LeakyReLU()
         self.sigmoid = nn.Sigmoid()
 
-        self._init_weights(hid_dim, hid_graph_num, hid_graph_size)
+        self._init_weights()
 
     def _init_weights(self):
-        nn.init.xavier_normal_(self.hid_adj)
-        nn.init.xavier_normal_(self.hid_feat)
+        nn.init.xavier_normal_(self.hidden_adj)
+        nn.init.xavier_normal_(self.hidden_feat)
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
@@ -38,21 +38,20 @@ class RW_NN(MessagePassing):
         unique = torch.unique(graph_indicator)
         n_graphs = unique.size(0)
 
-        adj_hidden_norm = torch.zeros(
-            self.hid_graph_num, self.hid_graph_size, self.hid_graph_size).to(self.device)
-        idx = torch.triu_indices(self.hid_graph_size, self.hid_graph_size, 1)
-        adj_hidden_norm[:, idx[0], idx[1]] = self.relu(self.hid_adj)
+        adj_hidden_norm = torch.zeros(self.hidden_graph_num, self.hidden_graph_size, self.hidden_graph_size).to(self.device)
+        idx = torch.triu_indices(self.hidden_graph_size, self.hidden_graph_size, 1)
+        adj_hidden_norm[:, idx[0], idx[1]] = self.relu(self.hidden_adj)
         adj_hidden_norm = adj_hidden_norm + \
             torch.transpose(adj_hidden_norm, 1, 2)
         x = self.sigmoid(self.fc(poi_feat))
-        z = self.hid_feat
+        z = self.hidden_feat
         zx = torch.einsum("abc,dc->abd", (z, x))
 
         out = []
         for i in range(self.max_step):
             if i == 0:
-                eye = torch.eye(self.hid_graph_size, device=self.device)
-                eye = eye.repeat(self.hid_graph_num, 1, 1)
+                eye = torch.eye(self.hidden_graph_size, device=self.device)
+                eye = eye.repeat(self.hidden_graph_num, 1, 1)
                 o = torch.einsum("abc,acd->abd", (eye, z))
                 t = torch.einsum("abc,dc->abd", (o, x))
             else:
@@ -74,23 +73,19 @@ class RW_NN(MessagePassing):
 
 
 class SeqGraph(nn.Module):
-    def __init__(self, n_poi, max_step, embed_dim, hid_graph_num, hid_graph_size, device):
+    def __init__(self, max_step, embed_dim, hidden_graph_num, hidden_graph_size, device):
         super(SeqGraph, self).__init__()
-        self.embed_dim = embed_dim
-        self.max_step = max_step
-        self.encoder = []
-        self.poi_embed = nn.Embedding(n_poi, embed_dim)
-        nn.init.xavier_normal_(self.poi_embed.weight)
 
         self.proj_head = nn.Sequential(
             nn.Linear(embed_dim, embed_dim),
             nn.LeakyReLU(inplace=True),
             nn.Linear(embed_dim, embed_dim)
         )
+        self.rwnn = RW_NN(max_step, embed_dim, hidden_graph_num, hidden_graph_size, device)
 
-        self.rwnn = RW_NN(max_step, embed_dim, hid_graph_num,
-                          hid_graph_size, device)
+        self._init_weights()
 
+    def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
