@@ -75,21 +75,8 @@ class RW_NN(MessagePassing):
 class SeqGraph(nn.Module):
     def __init__(self, max_step, embed_dim, hidden_graph_num, hidden_graph_size, device):
         super(SeqGraph, self).__init__()
-
-        self.proj_head = nn.Sequential(
-            nn.Linear(embed_dim, embed_dim),
-            nn.LeakyReLU(inplace=True),
-            nn.Linear(embed_dim, embed_dim)
-        )
         self.rwnn = RW_NN(max_step, embed_dim, hidden_graph_num, hidden_graph_size, device)
-
-        self._init_weights()
-
-    def _init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_normal_(m.weight)
 
     def forward(self, data, poi_embeds):
         sess_feat = self.rwnn(data, poi_embeds)
-        return self.proj_head(sess_feat)
+        return sess_feat
