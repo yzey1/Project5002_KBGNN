@@ -50,8 +50,6 @@ class GraphLayer(nn.Module):
     Args:
         embed_dim (int): Dimension of the embeddings.
 
-    Attributes:
-        W (nn.Linear): learnable weight matrix for message passing.
     """
 
     def __init__(self, embed_dim):
@@ -61,12 +59,12 @@ class GraphLayer(nn.Module):
     def forward(self, poi_rep, edge_index, dist_vec):
         """
         Args:
-            poi_rep (torch.Tensor): Input poi representation (num_nodes, dimension of embeddings).
+            poi_rep (torch.Tensor): Input poi representation (num_pois, embed_dim).
             edge_index (torch.Tensor): Edge index (2, num_edges).
             dist_vec (torch.Tensor): Distance vector (num_edges,).
 
         Returns:
-            torch.Tensor: Updated poi representation (num_nodes, out_channels).
+            torch.Tensor: Updated poi representation (num_pois, embed_dim).
         """
         
         nodes1, nodes2 = edge_index
