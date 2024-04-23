@@ -75,51 +75,44 @@ class GraphLayer(nn.Module):
         weight_mat = torch.sparse_coo_tensor(edge_index, norm_weight * dist_weight)
 
         poi_rep = self.linear(poi_rep)
-        return torch.sparse.mm(weight_mat, poi_rep)
+        poi_rep = torch.sparse.mm(weight_mat, poi_rep)
+        poi_rep = F.leaky_relu(poi_rep)
+        return F.normalize(poi_rep, dim=-1)
 
 
 class GeoGraph(nn.Module):
     """
-    Graph neural network model for geographical data.
+    Geographical model.
 
     Args:
         n_poi (int): Number of points of interest (POIs) in the graph.
-        n_gcn_layers (int): Number of GCN (Graph Convolutional Network) layers.
+        n_layers (int): Number of message passing nueral network layers.
         embed_dim (int): Dimension of the node embeddings.
-        dist_edges (torch.Tensor): Tensor representing the distance edges in the graph.
-        dist_vec (np.ndarray): Array representing the distance vectors in the graph.
+        dist_edges (torch.Tensor): Tensor representing the edges in the graph, size (2, num_edges).
+        dist_vec (np.ndarray): Array representing the distance of the edges, size (num_edges,).
         n_heads (int): Number of attention heads in the self-attention mechanism.
-        device (torch.device): Device on which the model will be run.
 
-    Attributes:
-        n_poi (int): Number of points of interest (POIs) in the graph.
-        embed_dim (int): Dimension of the node embeddings.
-        n_gcn_layers (int): Number of GCN (Graph Convolutional Network) layers.
-        device (torch.device): Device on which the model will be run.
-        dist_edges (torch.Tensor): Tensor representing the distance edges in the graph.
-        dist_vec (torch.Tensor): Tensor representing the distance vectors in the graph.
-        gcn (nn.ModuleList): List of GCN modules.
-        selfAttn (SelfAttn): Self-attention module.
     """
 
-    def __init__(self, n_poi, n_layers, embed_dim, dist_edges, dist_vec, n_heads, device):
+    def __init__(self, n_poi, n_layers, embed_dim, dist_edges, dist_vec, n_heads):
         super(GeoGraph, self).__init__()
         self.n_layers = n_layers
         
         # add the reverse direction and self-loop to the distance edges
-        self.dist_edges = dist_edges.to(device)
-        loop_index = torch.arange(0, n_poi).unsqueeze(0).repeat(2, 1).to(device)
+        self.dist_edges = dist_edges
+        loop_index = torch.arange(0, n_poi).unsqueeze(0).repeat(2, 1)
         self.dist_edges = torch.cat((self.dist_edges, self.dist_edges[[1, 0]], loop_index), dim=-1)
         
+        # add the reverse direction and self-loop to the distance vector
         dist_vec = np.concatenate((dist_vec, dist_vec, np.zeros(n_poi)))
-        self.dist_vec = torch.Tensor(dist_vec).to(device)
+        self.dist_vec = torch.Tensor(dist_vec)
 
         # GCN layers
         self.gcn = nn.ModuleList()
         for _ in range(self.n_layers):
-            self.gcn.append(GraphLayer(embed_dim).to(device))
+            self.gcn.append(GraphLayer(embed_dim))
         # self-attention layer
-        self.selfAttn = SelfAttn(embed_dim, n_heads).to(device)
+        self.selfAttn = SelfAttn(embed_dim, n_heads)
         
         self._init_weights()
 
@@ -154,8 +147,6 @@ class GeoGraph(nn.Module):
         # apply GCN layers
         for i in range(self.n_layers):
             enc = self.gcn[i](enc, self.dist_edges, self.dist_vec)
-            enc = F.leaky_relu(enc)
-            enc = F.normalize(enc, dim=-1)
         
         # geographical encoding for target poi
         poi_embed = enc[data.poi]
