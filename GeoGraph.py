@@ -105,9 +105,9 @@ class GeoGraph(nn.Module):
         selfAttn (SelfAttn): Self-attention module.
     """
 
-    def __init__(self, n_poi, n_gcn_layers, embed_dim, dist_edges, dist_vec, n_heads, device):
+    def __init__(self, n_poi, n_layers, embed_dim, dist_edges, dist_vec, n_heads, device):
         super(GeoGraph, self).__init__()
-        self.n_gcn_layers = n_gcn_layers
+        self.n_layers = n_layers
         
         # add the reverse direction and self-loop to the distance edges
         self.dist_edges = dist_edges.to(device)
@@ -119,7 +119,7 @@ class GeoGraph(nn.Module):
 
         # GCN layers
         self.gcn = nn.ModuleList()
-        for _ in range(self.n_gcn_layers):
+        for _ in range(self.n_layers):
             self.gcn.append(GraphLayer(embed_dim, device).to(device))
         # self-attention layer
         self.selfAttn = SelfAttn(embed_dim, n_heads).to(device)
@@ -155,7 +155,7 @@ class GeoGraph(nn.Module):
         # the original embeddings of the POIs
         enc = poi_embeds.embeds.weight
         # apply GCN layers
-        for i in range(self.n_gcn_layers):
+        for i in range(self.n_layers):
             enc = self.gcn[i](enc, self.dist_edges, self.dist_vec)
             enc = F.leaky_relu(enc)
             enc = F.normalize(enc, dim=-1)
