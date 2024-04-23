@@ -3,9 +3,9 @@ import torch.nn as nn
 from torch_geometric.nn import MessagePassing
 
 
-class RW_NN(MessagePassing):
+class SeqGraph(MessagePassing):
     def __init__(self, max_step, hidden_dim, hidden_graph_num, hidden_graph_size, device):
-        super(RW_NN, self).__init__()
+        super(SeqGraph, self).__init__()
         self.max_step = max_step
         self.device = device
         self.hid_dim = hidden_dim
@@ -70,13 +70,3 @@ class RW_NN(MessagePassing):
         out = self.relu(self.mlp(out))
         out = self.dropout(out)
         return out
-
-
-class SeqGraph(nn.Module):
-    def __init__(self, max_step, embed_dim, hidden_graph_num, hidden_graph_size, device):
-        super(SeqGraph, self).__init__()
-        self.rwnn = RW_NN(max_step, embed_dim, hidden_graph_num, hidden_graph_size, device)
-
-    def forward(self, data, poi_embeds):
-        sess_feat = self.rwnn(data, poi_embeds)
-        return sess_feat
