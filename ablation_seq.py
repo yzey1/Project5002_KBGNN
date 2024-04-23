@@ -53,19 +53,19 @@ ARG.add_argument('--train_percentage', type=float, default=1,
 ARG = ARG.parse_args()
 
 
-def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, MLP, dataset, arg, device):
+def eval_model(Seq_encoder, Geo_encoder, Poi_embeds, Predictor, dataset, arg, device):
     loader = DataLoader(dataset, arg.batch, shuffle=True)
     preds, labels = [], []
 
     Seq_encoder.eval()
     Geo_encoder.eval()
-    MLP.eval()
+    Predictor.eval()
 
     with torch.no_grad():
         for batch in loader:
             e_s = Seq_encoder(batch.to(device), Poi_embeds)
             _, h_t = Geo_encoder(batch.to(device), Poi_embeds)
-            logit = MLP(e_s, h_t)
+            logit = Predictor(e_s, h_t)
             logit = torch.sigmoid(logit).squeeze(
             ).clone().detach().cpu().numpy()
 
