@@ -45,7 +45,7 @@ class SelfAttn(nn.Module):
 
 class GraphLayer(nn.Module):
     """
-    A single GCN layer
+    A single message passing nueral network layer
 
     Args:
         in_channels (int): Number of input channels.
@@ -63,12 +63,12 @@ class GraphLayer(nn.Module):
     def forward(self, poi_rep, edge_index, dist_vec):
         """
         Args:
-            poi_nec (torch.Tensor): Input tensor of shape (num_nodes, dimension of embeddings).
-            edge_index (torch.Tensor): Edge index tensor of shape (2, num_edges).
-            dist_vec (torch.Tensor): Distance vector tensor of shape (num_edges,).
+            poi_rep (torch.Tensor): Input poi representation (num_nodes, dimension of embeddings).
+            edge_index (torch.Tensor): Edge index (2, num_edges).
+            dist_vec (torch.Tensor): Distance vector (num_edges,).
 
         Returns:
-            torch.Tensor: Output tensor of shape (num_nodes, out_channels).
+            torch.Tensor: Updated poi representation (num_nodes, out_channels).
         """
         
         nodes1, nodes2 = edge_index
