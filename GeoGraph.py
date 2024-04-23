@@ -96,7 +96,6 @@ class GeoGraph(nn.Module):
 
     def __init__(self, n_poi, n_layers, embed_dim, dist_edges, dist_vec, n_heads):
         super(GeoGraph, self).__init__()
-        self.n_layers = n_layers
         
         # add the reverse direction and self-loop to the distance edges
         self.dist_edges = dist_edges
@@ -109,7 +108,7 @@ class GeoGraph(nn.Module):
 
         # message passing neural network layers
         self.mpnn = nn.ModuleList()
-        for _ in range(self.n_layers):
+        for _ in range(n_layers):
             self.mpnn.append(GraphLayer(embed_dim))
 
         # self-attention layer
@@ -146,7 +145,7 @@ class GeoGraph(nn.Module):
         # the original embeddings of the POIs
         enc = poi_embeds.embeds.weight
         # apply GCN layers
-        for i in range(self.n_layers):
+        for i in range(len(self.mpnn)):
             enc = self.mpnn[i](enc, self.dist_edges, self.dist_vec)
         
         # geographical encoding for target poi
