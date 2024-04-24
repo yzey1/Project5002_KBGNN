@@ -59,6 +59,7 @@ class MLP(nn.Module):
 
 class MLP2(nn.Module):
     '''MLP for predicting the probability of visiting a POI.
+       only use geographical embedding and target geographical representation.
 
     Args:
         embed_dim (int): Embedding dimension.
