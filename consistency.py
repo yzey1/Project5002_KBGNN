@@ -72,7 +72,7 @@ class SampleSimilarities(nn.Module):
         return cosSim
 
 
-class consistencyLoss(nn.Module):
+class ConsistencyLoss(nn.Module):
     """
     Calculates the consistency loss between two sets of embeddings.
 
@@ -91,7 +91,7 @@ class consistencyLoss(nn.Module):
     """
 
     def __init__(self, embed_dim, queue_size, T, device):
-        super(consistencyLoss, self).__init__()
+        super(ConsistencyLoss, self).__init__()
         self.calculate_sampleSimilarities = SampleSimilarities(embed_dim, queue_size, T, device).to(device)
 
     def forward(self, seq_embed, geo_embed):

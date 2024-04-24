@@ -11,7 +11,7 @@ from sklearn.metrics import roc_auc_score, log_loss
 import numpy as np
 from GeoGraph import GeoGraph
 from SeqGraph import SeqGraph
-from consistency import consistencyLoss
+from consistency import ConsistencyLoss
 import torch.nn as nn
 from datetime import datetime
 from model import EmbeddingLayer, MLP
@@ -99,7 +99,7 @@ def train_test(tr_set, va_set, te_set, arg, dist_edges, dist_vec, device):
                            arg.embed, dist_edges, dist_vec, arg.num_heads).to(device)
     Poi_embeds = EmbeddingLayer(n_poi, arg.embed).to(device)
     Predictor = MLP(arg.embed).to(device)
-    Sim_criterion = consistencyLoss(
+    Sim_criterion = ConsistencyLoss(
         arg.embed, arg.compress_memory_size, arg.compress_t, device).to(device)
 
     opt = torch.optim.Adam([
