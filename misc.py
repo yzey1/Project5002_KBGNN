@@ -59,14 +59,13 @@ class MLP(nn.Module):
 
 class MLP2(nn.Module):
     '''MLP for predicting the probability of visiting a POI.
-       only use geographical embedding and target geographical representation.
+       only use one embedding and target geographical representation.
 
     Args:
         embed_dim (int): Embedding dimension.
 
     Input:
-        torch.Tensor: Geographical embedding.
-        torch.Tensor: Sequential embedding.
+        torch.Tensor: one embedding.
         torch.Tensor: Target geographical representation.
 
     Output:
