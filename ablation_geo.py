@@ -177,7 +177,6 @@ if __name__ == '__main__':
 
     with open(f'./processed_data/{ARG.data}/raw/dist_graph.pkl', 'rb') as f:
         dist_edges = torch.LongTensor(pickle.load(f))
-        dist_nei = pickle.load(f)
     dist_vec = np.load(f'./processed_data/{ARG.data}/raw/dist_on_graph.npy')
 
     logging.info(f'Data loaded.')

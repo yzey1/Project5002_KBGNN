@@ -139,7 +139,6 @@ print('Generating neighborhood graph...')
 
 # only regard the POIs with distance less or equal than 0.5km as neighbors
 threshold = 0.5
-neighbors = {poi: [] for poi in range(num_poi)}
 edges = [[], []]
 
 for i in tqdm(range(num_poi)):
@@ -147,8 +146,6 @@ for i in tqdm(range(num_poi)):
         lat1, lon1 = coords[i]
         lat2, lon2 = coords[j]
         if distance(lat1, lon1, lat2, lon2) <= threshold:
-            neighbors[i].append(j)
-            neighbors[j].append(i)
             edges[0].append(i)
             edges[1].append(j)
 
@@ -158,7 +155,6 @@ edges = np.array(edges)
 # save the neighborhood graph
 with open(dst_path+'dist_graph.pkl', 'wb') as f:
     pkl.dump(edges, f, pkl.HIGHEST_PROTOCOL)
-    pkl.dump(neighbors, f, pkl.HIGHEST_PROTOCOL)
 
 # the distance of each edge, size: (num_edges,)
 dist_on_graph = np.array([distance(coords[edges[0, i]][0], coords[edges[0, i]][1],
