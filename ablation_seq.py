@@ -13,7 +13,7 @@ from GeoGraph import GeoGraph
 from SeqGraph import SeqGraph
 import torch.nn as nn
 from datetime import datetime
-from model import EmbeddingLayer, MLP2
+from misc import EmbeddingLayer, MLP2
 
 
 ARG = argparse.ArgumentParser()

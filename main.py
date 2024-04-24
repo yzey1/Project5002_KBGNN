@@ -14,7 +14,7 @@ from SeqGraph import SeqGraph
 from consistency import ConsistencyLoss
 import torch.nn as nn
 from datetime import datetime
-from model import EmbeddingLayer, MLP
+from misc import EmbeddingLayer, MLP
 
 
 ARG = argparse.ArgumentParser()

@@ -12,7 +12,7 @@ import numpy as np
 from GeoGraph import GeoGraph
 import torch.nn as nn
 from datetime import datetime
-from model import EmbeddingLayer, MLP2
+from misc import EmbeddingLayer, MLP2
 
 
 ARG = argparse.ArgumentParser()
